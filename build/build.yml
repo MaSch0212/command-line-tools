@@ -23,7 +23,7 @@ steps:
   inputs:
     command: 'publish'
     packagesToPack: '**/*.csproj;!**/*Test.csproj'
-    arguments: '-c Release -r win-x64 -o $(Build.ArtifactStagingDirectory) --no-self-contained -p:PublishReadyToRun=true -p:TreatWarningsAsErrors=true'
+    arguments: '-c Release -r win-x64 -o "$(Build.ArtifactStagingDirectory)/CommandLineTools.win-x64" --no-self-contained -p:PublishReadyToRun=true -p:TreatWarningsAsErrors=true'
     publishWebProjects: false
 
 - task: PublishBuildArtifacts@1
