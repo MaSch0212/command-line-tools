@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CommandLineTools": {
+      "commandName": "Project",
+      "commandLineArgs": "rcx copy a b"
+    }
+  }
+}
