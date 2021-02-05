@@ -42,13 +42,23 @@ steps:
     if ($LASTEXITCODE -eq 0) {
         Write-Host "##vso[task.setvariable variable=PublishGitHubRelease;]false"
     } else {
+        $LASTEXITCODE = 0
         Write-Host "##vso[task.setvariable variable=GitReleaseTag;]$releaseTagName"
         Write-Host "##vso[task.setvariable variable=PublishGitHubRelease;]true"
+        git tag "$releaseTagName"
+        git push origin "$releaseTagName"
     }
+  displayName: "\U0001F6E0 Determine Version and create Tag"
 
-    exit 0
-
-- powershell: |
-    Write-Host "CLTVersion: $(CLTVersion)"
-    Write-Host "GitReleaseTag: $(GitReleaseTag)"
-    Write-Host "PublishGitHubRelease: $(PublishGitHubRelease)"
+- task: GitHubRelease@1
+  displayName: "\U0001F680 Publish to GitHub (Create Release)"
+  inputs:
+    gitHubConnection: 'github.com_MaSch0212'
+    repositoryName: '$(Build.Repository.Name)'
+    action: 'create'
+    target: '$(Build.SourceVersion)'
+    tagSource: 'userSpecifiedTag'
+    tag: '$(GitReleaseTag)'
+    releaseNotesFilePath: 'release-notes/v$(CLTVersion).md'
+    addChangeLog: false
+  condition: and(succeeded(), eq(variables['PublishGitHubRelease'], 'true'))
