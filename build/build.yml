@@ -24,6 +24,7 @@ steps:
     command: 'publish'
     packagesToPack: '**/*.csproj;!**/*Test.csproj'
     arguments: '-c Release -r win-x64 -o $(Build.ArtifactStagingDirectory) --no-self-contained -p:PublishReadyToRun=true -p:TreatWarningsAsErrors=true'
+    publishWebProjects: false
 
 - task: PublishBuildArtifacts@1
   displayName: "\U0001F6EB Publish to Azure Pipeline"
