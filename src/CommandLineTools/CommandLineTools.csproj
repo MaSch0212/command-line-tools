@@ -12,10 +12,15 @@
 
     <!-- Output info -->
     <OutputPath>..\..\bin\$(Configuration)\</OutputPath>
-    
+
     <!-- Package Info -->
     <Version>1.3.1</Version>
     <Authors>Marc Schmidt</Authors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputZipDir Condition=" '$(OutputZipDir)' == '' ">$(OutputPath)</OutputZipDir>
+    <OutputZipPath Condition=" '$(OutputZipPath)' == '' ">$(OutputZipDir)\$(AssemblyName)-$(Version)-$(RuntimeIdentifier).zip</OutputZipPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,7 +39,7 @@
   </ItemGroup>
   
   <Target Name="PowerShellAfterPublish" AfterTargets="Publish">
-    <Exec Command="pwsh -File &quot;$(ProjectDir)Properties\PostPublish.ps1&quot; -PublishDir &quot;$(PublishDir)\&quot; -ProjectDir &quot;$(ProjectDir)\&quot;" />
+    <Exec Command="pwsh -File &quot;$(ProjectDir)Properties\PostPublish.ps1&quot; -PublishDir &quot;$(PublishDir)\&quot; -ProjectDir &quot;$(ProjectDir)\&quot; -OutputZipPath &quot;$(OutputZipPath)&quot;" />
   </Target>
 
 </Project>

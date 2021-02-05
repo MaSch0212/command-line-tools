@@ -2,7 +2,9 @@
     [Parameter(Mandatory = $true)]
     [string] $PublishDir,
     [Parameter(Mandatory = $true)]
-    [string] $ProjectDir
+    [string] $ProjectDir,
+    [Parameter(Mandatory = $true)]
+    [string] $OutputZipPath
 )
 
 Write-Host "CurrentDir : $((Get-Location).Path)"
@@ -22,3 +24,6 @@ Move-Item -Path (Join-Path $PublishDir "*") -Destination $subDir -Exclude $subDi
 $scriptsDir = Join-Path $ProjectDir "Scripts"
 
 Copy-Item -Path (Join-Path $scriptsDir "*") -Destination $PublishDir -Include *.cmd, *.ps1 -Force
+
+[IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($OutputZipPath))
+Compress-Archive "$PublishDir/*" -DestinationPath $OutputZipPath -Force
