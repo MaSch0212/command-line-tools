@@ -5,6 +5,7 @@ trigger:
   paths:
     include:
     - build
+    - release-notes
     - src
 
 pool:
@@ -14,6 +15,7 @@ steps:
 - checkout: self
   clean: true
   persistCredentials: true
+
 # - task: DotNetCoreCLI@2
 #   displayName: "\U0001F308 Run Unit Tests"
 #   inputs:
@@ -43,11 +45,22 @@ steps:
     git rev-parse "$releaseTagName"
 
     if ($LASTEXITCODE -eq 0) {
+        Write-Host "The tag `"$releaseTagName`" already exists. No GitHub Release will be created."
         Write-Host "##vso[task.setvariable variable=PublishGitHubRelease;]false"
     } else {
         $LASTEXITCODE = 0
+        
         Write-Host "##vso[task.setvariable variable=GitReleaseTag;]$releaseTagName"
         Write-Host "##vso[task.setvariable variable=PublishGitHubRelease;]true"
+
+        $expectedMdFile = "release-notes/v$(CLTVersion).md"
+        if (-not (Test-Path $expectedMdFile -PathType Leaf)) {
+            Write-Error "There is no release-notes file for version $(CLTVersion). Please make sure that the file `"$expectedMdFile`" exists."
+            exit -1
+        }
+        
+        Write-Host "Tag `"$releaseTagName`" does not exist. GitHub Release will be created."
+        Write-Host "Creating and pushing tag `"$releaseTagName`"..."
         git tag "$releaseTagName"
         git push origin "$releaseTagName"
     }
