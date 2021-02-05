@@ -1,0 +1,33 @@
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - build
+    - src
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+# - task: DotNetCoreCLI@2
+#   displayName: "\U0001F308 Run Unit Tests"
+#   inputs:
+#     command: 'test'
+#     projects: '**/*Test.csproj'
+#     arguments: '--collect "Code coverage" -p:TreatWarningsAsErrors=true'
+
+- task: DotNetCoreCLI@2
+  displayName: "\U0001F6E0 Build projects"
+  inputs:
+    command: 'publish'
+    packagesToPack: '**/*.csproj;!**/*Test.csproj'
+    arguments: '-c Release -r win-x64 -o $(Build.ArtifactStagingDirectory) --no-self-contained -p:PublishReadyToRun=true -p:TreatWarningsAsErrors=true'
+
+- task: PublishBuildArtifacts@1
+  displayName: "\U0001F6EB Publish to Azure Pipeline"
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'

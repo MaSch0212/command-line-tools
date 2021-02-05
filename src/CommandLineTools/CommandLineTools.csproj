@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+
+    <!-- General Project info -->
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>MaSch.CommandLineTools</RootNamespace>
+    <OutputType>Exe</OutputType>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <CodeAnalysisRuleSet>..\..\build\CommandLineTools.ruleset</CodeAnalysisRuleSet>
+
+    <!-- Output info -->
+    <OutputPath>..\..\bin\$(Configuration)\</OutputPath>
+    
+    <!-- Package Info -->
+    <Version>1.3.1</Version>
+    <Authors>Marc Schmidt</Authors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
+    <PackageReference Include="MaSch.Console" Version="0.1.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="System.Security.Principal.Windows" Version="4.7.0" />
+  </ItemGroup>
+  
+  <Target Name="PowerShellAfterPublish" AfterTargets="Publish">
+    <Exec Command="pwsh -File &quot;$(ProjectDir)Properties\PostPublish.ps1&quot; -PublishDir &quot;$(PublishDir)\&quot; -ProjectDir &quot;$(ProjectDir)\&quot;" />
+  </Target>
+
+</Project>
