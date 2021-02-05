@@ -8,7 +8,7 @@ trigger:
     - src
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'windows-2019'
 
 steps:
 # - task: DotNetCoreCLI@2
