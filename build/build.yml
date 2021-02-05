@@ -32,3 +32,23 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'drop'
     publishLocation: 'Container'
+
+- powershell: |
+    Write-Host "Current Version: $(CLTVersion)"
+
+    $releaseTagName = "release-$(CLTVersion)"
+    git rev-parse "$releaseTagName"
+
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "##vso[task.setvariable variable=PublishGitHubRelease;]false"
+    } else {
+        Write-Host "##vso[task.setvariable variable=GitReleaseTag;]$releaseTagName"
+        Write-Host "##vso[task.setvariable variable=PublishGitHubRelease;]true"
+    }
+
+    exit 0
+
+- powershell: |
+    Write-Host "CLTVersion: $(CLTVersion)"
+    Write-Host "GitReleaseTag: $(GitReleaseTag)"
+    Write-Host "PublishGitHubRelease: $(PublishGitHubRelease)"

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30320.27
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{23CB7C13-F57D-4E5D-9124-A7AFE0D67006}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{23CB7C13-F57D-4E5D-9124-A7AFE0D67006}"
 	ProjectSection(SolutionItems) = preProject
 		build\build.yml = build\build.yml
 		build\CommandLineTools.ruleset = build\CommandLineTools.ruleset
