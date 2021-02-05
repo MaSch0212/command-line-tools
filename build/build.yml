@@ -22,9 +22,9 @@ steps:
   displayName: "\U0001F6E0 Build projects"
   inputs:
     command: 'publish'
-    packagesToPack: '**/*.csproj;!**/*Test.csproj'
-    arguments: '-c Release -r win-x64 --no-self-contained -p:PublishReadyToRun=true -p:OutputZipDir=$(Build.ArtifactStagingDirectory) -p:TreatWarningsAsErrors=true'
     publishWebProjects: false
+    arguments: '-c Release -r win-x64 --no-self-contained -p:PublishReadyToRun=true -p:OutputZipDir=$(Build.ArtifactStagingDirectory) -p:TreatWarningsAsErrors=true'
+    zipAfterPublish: false
 
 - task: PublishBuildArtifacts@1
   displayName: "\U0001F6EB Publish to Azure Pipeline"
