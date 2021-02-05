@@ -11,6 +11,9 @@ pool:
   vmImage: 'windows-2019'
 
 steps:
+- checkout: self
+  clean: true
+  persistCredentials: true
 # - task: DotNetCoreCLI@2
 #   displayName: "\U0001F308 Run Unit Tests"
 #   inputs:
