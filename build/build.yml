@@ -75,6 +75,6 @@ steps:
     target: '$(Build.SourceVersion)'
     tagSource: 'userSpecifiedTag'
     tag: '$(GitReleaseTag)'
-    releaseNotesFilePath: 'release-notes/v$(CLTVersion).md'
+    releaseNotesFilePath: 'docs/release-notes/v$(CLTVersion).md'
     addChangeLog: false
   condition: and(succeeded(), eq(variables['PublishGitHubRelease'], 'true'))
