@@ -39,9 +39,9 @@ steps:
     publishLocation: 'Container'
 
 - powershell: |
-    Write-Host "Current Version: $(CLTVersion)"
+    Write-Host "Current Version: $(AppVersion)"
 
-    $releaseTagName = "release-$(CLTVersion)"
+    $releaseTagName = "release-$(AppVersion)"
     git rev-parse "$releaseTagName"
 
     if ($LASTEXITCODE -eq 0) {
@@ -53,9 +53,9 @@ steps:
         Write-Host "##vso[task.setvariable variable=GitReleaseTag;]$releaseTagName"
         Write-Host "##vso[task.setvariable variable=PublishGitHubRelease;]true"
 
-        $expectedMdFile = "release-notes/v$(CLTVersion).md"
+        $expectedMdFile = "docs/release-notes/v$(AppVersion).md"
         if (-not (Test-Path $expectedMdFile -PathType Leaf)) {
-            Write-Error "There is no release-notes file for version $(CLTVersion). Please make sure that the file `"$expectedMdFile`" exists."
+            Write-Error "There is no release notes file for version $(AppVersion). Please make sure that the file `"$expectedMdFile`" exists."
             exit -1
         }
         
@@ -75,6 +75,6 @@ steps:
     target: '$(Build.SourceVersion)'
     tagSource: 'userSpecifiedTag'
     tag: '$(GitReleaseTag)'
-    releaseNotesFilePath: 'docs/release-notes/v$(CLTVersion).md'
+    releaseNotesFilePath: 'docs/release-notes/v$(AppVersion).md'
     addChangeLog: false
   condition: and(succeeded(), eq(variables['PublishGitHubRelease'], 'true'))

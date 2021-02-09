@@ -40,7 +40,7 @@
   
   <Target Name="PowerShellAfterPublish" AfterTargets="Publish">
     <Exec Command="pwsh -File &quot;$(ProjectDir)Properties\PostPublish.ps1&quot; -PublishDir &quot;$(PublishDir)\&quot; -ProjectDir &quot;$(ProjectDir)\&quot; -OutputZipPath &quot;$(OutputZipPath)&quot;" />
-    <Message Text="##vso[task.setvariable variable=CLTVersion;]$(Version)" Importance="high" />
+    <Message Text="##vso[task.setvariable variable=AppVersion;]$(Version)" Importance="high" />
   </Target>
 
 </Project>
