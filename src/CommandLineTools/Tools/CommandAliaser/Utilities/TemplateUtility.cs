@@ -11,7 +11,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
         private static readonly Regex SpecificCmdArgsRegex = new Regex(@"(?<!\w)%(?<nr>\d+)(?!\w)");
         private static readonly Regex SpecificPowerShellArgsRegex = new Regex(@"(?<!\w)\$args\[(?<nr>\d+)\](?!\w)");
 
-        public static string GetPowerShellCommandScript(string alias, string command, string description, Tool? targetTool)
+        public static string GetPowerShellCommandScript(string alias, string command, string description, TerminalTool? targetTool)
         {
             var result = new StringBuilder()
                 .AppendLine($"# Alias:{alias}")
@@ -20,13 +20,13 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
                 .AppendLine()
                 .AppendLine($"# Command:");
 
-            if (targetTool is null || targetTool == Tool.PowerShell)
+            if (targetTool is null || targetTool == TerminalTool.PowerShell)
             {
                 command = AllArgsRegex.Replace(command, "$args");
                 command = SpecificCmdArgsRegex.Replace(command, x => $"$args[{int.Parse(x.Groups["nr"].Value) - 1}]");
                 result.AppendLine(command);
             }
-            else if (targetTool == Tool.Cmd)
+            else if (targetTool == TerminalTool.Cmd)
             {
                 result.AppendLine($"cmd /C \"`\"$PSScriptRoot\\{alias}.cmd`\"\" $args");
             }
@@ -38,7 +38,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
             return result.ToString();
         }
 
-        public static string GetCmdCommandScript(string alias, string command, string description, Tool? targetTool)
+        public static string GetCmdCommandScript(string alias, string command, string description, TerminalTool? targetTool)
         {
             var result = new StringBuilder()
                 .AppendLine("@echo off")
@@ -49,13 +49,13 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
                 .AppendLine()
                 .AppendLine($"REM Command:");
 
-            if (targetTool is null || targetTool == Tool.Cmd)
+            if (targetTool is null || targetTool == TerminalTool.Cmd)
             {
                 command = AllArgsRegex.Replace(command, "%*");
                 command = SpecificPowerShellArgsRegex.Replace(command, x => $"%{int.Parse(x.Groups["nr"].Value) + 1}");
                 result.AppendLine(command);
             }
-            else if (targetTool == Tool.PowerShell)
+            else if (targetTool == TerminalTool.PowerShell)
             {
                 result.AppendLine($"powershell -ExecutionPolicy ByPass -File \"%~dp0\\{alias}.ps1\" %*");
             }

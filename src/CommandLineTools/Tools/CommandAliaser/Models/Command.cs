@@ -12,7 +12,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Models
         public string? Description { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
-        public Tool? Tool { get; set; }
+        public TerminalTool? Tool { get; set; }
 
         public string? CommandText { get; set; }
     }

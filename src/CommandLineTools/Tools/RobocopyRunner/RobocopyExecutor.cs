@@ -1,102 +1,30 @@
-﻿using System;
+﻿using MaSch.CommandLineTools.Utilities;
+using MaSch.Console;
+using MaSch.Console.Cli.Runtime;
+using MaSch.Console.Controls;
+using MaSch.Core.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using CommandLine;
-using CommandLine.Text;
-using MaSch.CommandLineTools.Common;
-using MaSch.CommandLineTools.Extensions;
-using MaSch.CommandLineTools.Utilities;
-using MaSch.Console;
-using MaSch.Console.Controls;
-using MaSch.Core.Extensions;
 
 namespace MaSch.CommandLineTools.Tools.RobocopyRunner
 {
-    [Verb("rcx", HelpText = "Provides a different way to execute robocopy. Also contains some robocopy extensions.")]
-    public class RobocopyRunner : BaseToolRunnerWithArgsParser
+    public class RobocopyExecutor : ICliCommandExecutor<IRobocopyOptions>
     {
-        private static readonly (int code, string description)[] RobocopyExitCodes =
-        {
-            (0, "No files were copied. No failure was encountered. No files were mismatched. The files already exist in the destination directory; therefore, the copy operation was skipped."),
-            (1, "All files were copied successfully."),
-            (2, "There are some additional files in the destination directory that are not present in the source directory. No files were copied."),
-            (3, "Some files were copied. Additional files were present. No failure was encountered."),
-            (5, "Some files were copied. Some files were mismatched. No failure was encountered."),
-            (6, "Additional files and mismatched files exist. No files were copied and no failures were encountered. This means that the files already exist in the destination directory."),
-            (7, "Files were copied, a file mismatch was present, and additional files were present."),
-            (8, "Several files did not copy."),
-        };
+        private static readonly Regex FileRegex = new(@"(?<size>(?<=\s+)\d+(?=\t))\s+(?<file>.+(?=$))", RegexOptions.Compiled);
+        private static readonly Regex PercentRegex = new(@"[\d\.\,]+(?=%)", RegexOptions.Compiled);
 
-        private static readonly Regex FileRegex = new Regex(@"(?<size>(?<=\s+)\d+(?=\t))\s+(?<file>.+(?=$))", RegexOptions.Compiled);
-        private static readonly Regex PercentRegex = new Regex(@"[\d\.\,]+(?=%)", RegexOptions.Compiled);
-
-        protected override void OnConfigure(RunnerOptions options)
-        {
-            options.Author = "Marc Schmidt";
-            options.Year = 2020;
-            options.DisplayName = "Robocopy Runner";
-            options.Version = new Version(1, 0, 1);
-
-            options.AddOptionHandler<CopyOptions>(Handle);
-            options.AddOptionHandler<MoveOptions>(Handle);
-            options.AddOptionHandler<CreateOptions>(Handle);
-        }
-
-        protected override void AdjustHelpText<T>(ParserResult<T> result, HelpText h)
-        {
-            base.AdjustHelpText(result, h);
-
-            var interfaceProperties = result.TypeInfo.Current.GetInterfaces().SelectMany(x => x.GetProperties());
-            var options = (from p in result.TypeInfo.Current.GetProperties()
-                           let o = p.GetCustomAttribute<OptionAttribute>(true) ?? interfaceProperties.FirstOrDefault(x => x.Name == p.Name)?.GetCustomAttribute<OptionAttribute>(true)
-                           where o != null
-                           select (shortName: o.ShortName, longName: o.LongName)).ToArray();
-            h.OptionComparison = (a, b) =>
-            {
-                if (a.IsOption != b.IsOption)
-                {
-                    return (a.IsOption ? 1 : 0) - (b.IsOption ? 1 : 0);
-                }
-                else if (!a.IsOption && !b.IsOption)
-                {
-                    return a.Index.CompareTo(b.Index);
-                }
-                else
-                {
-                    var aIndex = options.IndexOf((a.ShortName, a.LongName));
-                    var bIndex = options.IndexOf((b.ShortName, b.LongName));
-                    return aIndex < 0 && bIndex < 0 ? a.Index.CompareTo(b.Index) : (aIndex < 0 ? int.MaxValue : aIndex).CompareTo(bIndex < 0 ? int.MaxValue : bIndex);
-                }
-            };
-        }
-
-        protected override void OnHandleExitCodes()
-        {
-            WriteExitCodeList("General", x => x < 0);
-            WriteExitCodeList("Copy (Default)", ExitCode.RobocopyCopy);
-            Console.WriteLine("  If no error occures the exit code of robocopy is returned.");
-            WriteExitCodeList("Move", ExitCode.RobocopyMove);
-            Console.WriteLine("  If no error occures the exit code of robocopy is returned.");
-            WriteExitCodeList("Create", ExitCode.RobocopyCreate);
-            Console.WriteLine("  If no error occures the exit code of robocopy is returned.");
-
-            Console.WriteLine();
-            Console.WriteLine("robocopy Exit Codes:");
-            Console.WriteLine(RobocopyExitCodes.ToColumnsString(x => x.code.ToString(), x => x.description));
-        }
-
-        private ExitCode Handle(IRobocopyOptions options)
+        public int ExecuteCommand(CliExecutionContext context, IRobocopyOptions parameters)
         {
             var allArgs = new StringBuilder();
-            allArgs.Append($"\"{options.Source}\"");
-            allArgs.Append($" \"{options.Destination}\"");
+            allArgs.Append($"\"{parameters.Source}\"");
+            allArgs.Append($" \"{parameters.Destination}\"");
 
-            var cmo = options as IRobocopyCopyMoveOptions;
+            var cmo = parameters as IRobocopyCopyMoveOptions;
             if (cmo != null)
             {
                 if (!cmo.Files.IsNullOrEmpty())
@@ -135,49 +63,49 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
                 AddArg(allArgs, "xjf", cmo.ExcludeFileJunctions);
             }
 
-            if (options is CreateOptions)
+            if (parameters is CreateOptions)
                 allArgs.Append(" /create");
 
-            AddArg(allArgs, "s", options.CopyNonEmptySubdirectories);
-            AddArg(allArgs, "e", options.CopyEmptySubdirectories);
-            AddArg(allArgs, "lev", options.MaxSubdirectoryTreeLevel);
-            AddArg(allArgs, "dcopy", options.DirectoryPropertiesToCopy);
-            AddArg(allArgs, "purge", options.Purge);
-            AddArg(allArgs, "mir", options.Mirror);
-            AddArg(allArgs, "256", options.DisableLongPaths);
-            AddArg(allArgs, "mon", options.MonitorForChangeCount);
-            AddArg(allArgs, "mot", options.MonitorForChangeTime);
-            if (options.ThreadCount != null)
-                AddArg(allArgs, "mt", options.ThreadCount);
+            AddArg(allArgs, "s", parameters.CopyNonEmptySubdirectories);
+            AddArg(allArgs, "e", parameters.CopyEmptySubdirectories);
+            AddArg(allArgs, "lev", parameters.MaxSubdirectoryTreeLevel);
+            AddArg(allArgs, "dcopy", parameters.DirectoryPropertiesToCopy);
+            AddArg(allArgs, "purge", parameters.Purge);
+            AddArg(allArgs, "mir", parameters.Mirror);
+            AddArg(allArgs, "256", parameters.DisableLongPaths);
+            AddArg(allArgs, "mon", parameters.MonitorForChangeCount);
+            AddArg(allArgs, "mot", parameters.MonitorForChangeTime);
+            if (parameters.ThreadCount != null)
+                AddArg(allArgs, "mt", parameters.ThreadCount);
             else
-                AddArg(allArgs, "mt", options.RunMultiThreaded);
-            AddArg(allArgs, "sl", options.CopySymbolicLinks);
+                AddArg(allArgs, "mt", parameters.RunMultiThreaded);
+            AddArg(allArgs, "sl", parameters.CopySymbolicLinks);
 
-            AddArg(allArgs, "xd", options.ExcludedDirectories);
-            AddArg(allArgs, "xx", options.ExcludeExtraFilesAndDirectories);
-            AddArg(allArgs, "xl", options.ExcludeLonelyFilesAndDirectories);
-            AddArg(allArgs, "maxage", options.MaxAge);
-            AddArg(allArgs, "minage", options.MinAge);
-            AddArg(allArgs, "maxlad", options.MaxLastAccessDate);
-            AddArg(allArgs, "minlad", options.MinLastAccessDate);
-            AddArg(allArgs, "xj", options.ExcludeJunctions);
-            AddArg(allArgs, "dst", options.CompensateDstTimeDiffs);
-            AddArg(allArgs, "xjd", options.ExcludeDirectoryJunctions);
+            AddArg(allArgs, "xd", parameters.ExcludedDirectories);
+            AddArg(allArgs, "xx", parameters.ExcludeExtraFilesAndDirectories);
+            AddArg(allArgs, "xl", parameters.ExcludeLonelyFilesAndDirectories);
+            AddArg(allArgs, "maxage", parameters.MaxAge);
+            AddArg(allArgs, "minage", parameters.MinAge);
+            AddArg(allArgs, "maxlad", parameters.MaxLastAccessDate);
+            AddArg(allArgs, "minlad", parameters.MinLastAccessDate);
+            AddArg(allArgs, "xj", parameters.ExcludeJunctions);
+            AddArg(allArgs, "dst", parameters.CompensateDstTimeDiffs);
+            AddArg(allArgs, "xjd", parameters.ExcludeDirectoryJunctions);
 
-            AddArg(allArgs, "r", options.RetryCount);
-            AddArg(allArgs, "w", options.RetryWaitTime);
-            AddArg(allArgs, "tbd", options.WaitForShareNames);
+            AddArg(allArgs, "r", parameters.RetryCount);
+            AddArg(allArgs, "w", parameters.RetryWaitTime);
+            AddArg(allArgs, "tbd", parameters.WaitForShareNames);
 
-            if (!options.AdditionalRobocopyArguments.IsNullOrEmpty())
-                allArgs.Append($" \"{string.Join("\" \"", options.AdditionalRobocopyArguments)}\"");
+            if (!parameters.AdditionalRobocopyArguments.IsNullOrEmpty())
+                allArgs.Append($" \"{string.Join("\" \"", parameters.AdditionalRobocopyArguments)}\"");
 
             if (cmo?.ShowTotalProgress == true)
-                return (ExitCode)RunRobocopyWithProgress(cmo, allArgs.ToString());
+                return RunRobocopyWithProgress(context.Console, cmo, allArgs.ToString());
             else
-                return (ExitCode)ProcessUtility.RunProcess("robocopy", allArgs.ToString(), x => Console.WriteLine(x), x => Console.WriteLineWithColor(x, ConsoleColor.Red));
+                return ProcessUtility.RunProcess("robocopy", allArgs.ToString(), x => context.Console.WriteLine(x), x => context.Console.WriteLineWithColor(x, ConsoleColor.Red));
         }
 
-        private int RunRobocopyWithProgress(IRobocopyCopyMoveOptions options, string arguments)
+        private int RunRobocopyWithProgress(IConsoleService console, IRobocopyCopyMoveOptions options, string arguments)
         {
             long totalBytes = 0;
             long copiedBytes = 0;
@@ -189,7 +117,7 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
             int maxStatusTextLength = 0;
             var folders = new LinkedList<string>();
 
-            var p1 = new ProgressControl(Console)
+            var p1 = new ProgressControl(console)
             {
                 Progress = double.NaN,
                 ShowStatusText = true,
@@ -198,7 +126,7 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
                 UseOneLineOnly = false,
                 Status = ProgressControlStatus.Loading,
             };
-            var p2 = new ProgressControl(Console)
+            var p2 = new ProgressControl(console)
             {
                 Progress = double.NaN,
                 ShowStatusText = true,
@@ -208,12 +136,12 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
             };
 
             int result = 0;
-            using (new ConsoleScope(Console, false, false, false))
+            using (new ConsoleScope(console, false, false, false))
             {
-                Console.IsCursorVisible = false;
-                Console.ReserveBufferLines(4);
+                console.IsCursorVisible = false;
+                console.ReserveBufferLines(4);
                 p1.Show();
-                Console.CancelKeyPress += OnCancelKeyPressed;
+                console.CancelKeyPress += OnCancelKeyPressed;
 
                 var testArgs = arguments + " /NP /NC /BYTES /NJH /NJS /L";
                 if (!options.RunMultiThreaded && options.ThreadCount == null && !options.DisableMtInTotalProgressDryRun)
@@ -229,7 +157,7 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
                     WriteLine($"Found a total of {fileCount} file(s) in {folders.Distinct().Count()} folder(s) with a total size of {GetFormattedByteSize(totalBytes, 2, CultureInfo.InvariantCulture)} to copy.", null);
                     p1.ShowStatusText = false;
                     using (ConsoleSynchronizer.Scope())
-                        Console.CursorPosition.Y--;
+                        console.CursorPosition.Y--;
                     p2.Show();
                     maxStatusTextLength = p2.MaxStatusTextLength - ((fileCountPadding * 2) + 3);
 
@@ -246,7 +174,7 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
                 }
 
                 p1.Hide(true);
-                Console.CancelKeyPress -= OnCancelKeyPressed;
+                console.CancelKeyPress -= OnCancelKeyPressed;
             }
 
             return result;
@@ -261,10 +189,10 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
                 using (ConsoleSynchronizer.Scope())
                 {
                     if (color.HasValue)
-                        Console.WriteLineWithColor(text, color.Value);
+                        console.WriteLineWithColor(text, color.Value);
                     else
-                        Console.WriteLine(text);
-                    Console.ReserveBufferLines(4);
+                        console.WriteLine(text);
+                    console.ReserveBufferLines(4);
                 }
 
                 p1!.Show();
@@ -344,7 +272,7 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
                 WriteLine("Copy has been canceled by the user!", ConsoleColor.Yellow);
                 p2?.Hide(true);
                 p1?.Hide(true);
-                Console.IsCursorVisible = true;
+                console.IsCursorVisible = true;
             }
         }
 

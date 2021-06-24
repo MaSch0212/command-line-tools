@@ -7,7 +7,7 @@ namespace MaSch.CommandLineTools.Utilities
 {
     public static class ProcessUtility
     {
-        private static readonly List<Process> _runningProcesses = new List<Process>();
+        private static readonly List<Process> _runningProcesses = new();
 
         public static int RunProcess(string processName, string parameters, Action<string?>? onNewOutput, Action<string?>? onNewError)
             => RunProcess(processName, parameters, null, onNewOutput, onNewError);

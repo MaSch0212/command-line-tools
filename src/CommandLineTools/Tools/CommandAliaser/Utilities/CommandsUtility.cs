@@ -8,7 +8,6 @@ using MaSch.Console;
 using MaSch.Core;
 using MaSch.Core.Extensions;
 using Newtonsoft.Json;
-using static MaSch.CommandLineTools.Tools.CommandAliaser.Constants;
 
 namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
 {
@@ -16,13 +15,14 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
     {
         public static Dictionary<string, Command> LoadCommands(string path)
         {
-            var commandsFilePath = Path.Combine(path, CommandsFileName);
+            var commandsFilePath = Path.Combine(path, CommandAliaserTool.CommandsFileName);
             if (File.Exists(commandsFilePath))
             {
                 var json = File.ReadAllText(commandsFilePath);
                 var result = JsonConvert.DeserializeObject<Dictionary<string, Command>>(json);
-                result.ForEach(x => x.Value.Alias = x.Key);
-                return result;
+                if (result != null)
+                    result.ForEach(x => x.Value.Alias = x.Key);
+                return result ?? new();
             }
             else
             {
@@ -32,7 +32,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
 
         public static bool SaveCommands(string path, Dictionary<string, Command> commands)
         {
-            var commandsFilePath = Path.Combine(path, CommandsFileName);
+            var commandsFilePath = Path.Combine(path, CommandAliaserTool.CommandsFileName);
             try
             {
                 var json = JsonConvert.SerializeObject(commands, Formatting.Indented);
@@ -59,17 +59,17 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
             return false;
         }
 
-        public static string GetScriptFilePath(string path, string? alias, Tool tool)
+        public static string GetScriptFilePath(string path, string? alias, TerminalTool tool)
         {
             return tool switch
             {
-                Tool.PowerShell => Path.Combine(path, $"{alias}.ps1"),
-                Tool.Cmd => Path.Combine(path, $"{alias}.cmd"),
-                _ => throw new ArgumentException($"The tool \"{tool}\" is unknown.", nameof(tool))
+                TerminalTool.PowerShell => Path.Combine(path, $"{alias}.ps1"),
+                TerminalTool.Cmd => Path.Combine(path, $"{alias}.cmd"),
+                _ => throw new ArgumentException($"The tool \"{tool}\" is unknown.", nameof(tool)),
             };
         }
 
-        public static bool WriteScriptFile(string path, string? alias, Tool scriptTool, string? command, string? description, Tool? commandTool)
+        public static bool WriteScriptFile(string path, string? alias, TerminalTool scriptTool, string? command, string? description, TerminalTool? commandTool)
         {
             string scriptPath = string.Empty;
             try
@@ -77,9 +77,9 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
                 scriptPath = GetScriptFilePath(path, alias, scriptTool);
                 var scriptContent = scriptTool switch
                 {
-                    Tool.PowerShell => TemplateUtility.GetPowerShellCommandScript(alias ?? string.Empty, command ?? string.Empty, description ?? string.Empty, commandTool),
-                    Tool.Cmd => TemplateUtility.GetCmdCommandScript(alias ?? string.Empty, command ?? string.Empty, description ?? string.Empty, commandTool),
-                    _ => throw new ArgumentException($"The tool \"{scriptTool}\" is unknown.", nameof(scriptTool))
+                    TerminalTool.PowerShell => TemplateUtility.GetPowerShellCommandScript(alias ?? string.Empty, command ?? string.Empty, description ?? string.Empty, commandTool),
+                    TerminalTool.Cmd => TemplateUtility.GetCmdCommandScript(alias ?? string.Empty, command ?? string.Empty, description ?? string.Empty, commandTool),
+                    _ => throw new ArgumentException($"The tool \"{scriptTool}\" is unknown.", nameof(scriptTool)),
                 };
                 Directory.CreateDirectory(path);
                 File.WriteAllText(scriptPath, scriptContent);
@@ -92,7 +92,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
             }
         }
 
-        public static bool DeleteScriptFile(string path, string alias, Tool scriptTool)
+        public static bool DeleteScriptFile(string path, string alias, TerminalTool scriptTool)
             => DeleteScriptFile(() => GetScriptFilePath(path, alias, scriptTool));
         public static bool DeleteScriptFile(string filePath)
             => DeleteScriptFile(() => filePath);

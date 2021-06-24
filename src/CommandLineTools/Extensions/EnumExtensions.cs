@@ -4,13 +4,13 @@ namespace MaSch.CommandLineTools.Extensions
 {
     public static class EnumExtensions
     {
-        public static Tool? ToTool(this string toolName)
+        public static TerminalTool? ToTool(this string toolName)
         {
             return toolName.ToLower() switch
             {
-                var x when x == "powershell" || x == "pwsh" || x == "ps" => Tool.PowerShell,
-                "cmd" => Tool.Cmd,
-                _ => (Tool?)null,
+                var x when x == "powershell" || x == "pwsh" || x == "ps" => TerminalTool.PowerShell,
+                "cmd" => TerminalTool.Cmd,
+                _ => (TerminalTool?)null,
             };
         }
     }

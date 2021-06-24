@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using CommandLine;
-using CommandLine.Text;
-using MaSch.CommandLineTools.Common;
+﻿using MaSch.CommandLineTools.Common;
 using MaSch.CommandLineTools.Extensions;
 using MaSch.CommandLineTools.Tools.Attach;
 using MaSch.CommandLineTools.Tools.CommandAliaser;
@@ -16,19 +8,20 @@ using MaSch.CommandLineTools.Tools.Su;
 using MaSch.CommandLineTools.Tools.Sudo;
 using MaSch.CommandLineTools.Utilities;
 using MaSch.Console;
+using MaSch.Console.Cli;
 using MaSch.Core;
 using MaSch.Core.Extensions;
-using static System.Environment;
-using ExitCode = MaSch.CommandLineTools.Common.ExitCode;
+using System;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace MaSch.CommandLineTools
 {
     public static class Program
     {
-        private static readonly List<Type> _tools = new List<Type>();
-
-        internal static string ConfigurationDirectory { get; set; } = Path.Combine(GetFolderPath(SpecialFolder.ApplicationData), "MaSch", "CommandLineTools");
-        internal static Version Version { get; set; } = typeof(Program).Assembly.GetName().Version!;
+        internal static string ConfigurationDirectory { get; set; }
+            = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MaSch", "CommandLineTools");
 
         public static int Main(string[] args)
         {
@@ -41,32 +34,37 @@ namespace MaSch.CommandLineTools
 
                 ServiceContext.AddService<IConsoleService>(console);
 
-                _tools.Add(typeof(DirectoryAliaserRunner));
-                _tools.Add(typeof(CommandAliaserRunner));
+                var helpPage = new HelpPage();
+                var appBuilder = new CliApplicationBuilder()
+                    .WithHelpPage(helpPage)
+                    .Configure(o =>
+                    {
+                        o.CliName = "clt";
+                        o.Name = "MaSch Command Line Tools";
+                        o.Author = "Marc Schmidt";
+                        o.Year = "2021";
+                        o.ConsoleService = console;
+                    })
+                    .WithTool<DirectoryAliaserTool>()
+                    .WithTool<CommandAliaserTool>();
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    _tools.Add(typeof(AttachRunner));
-                    _tools.Add(typeof(RobocopyRunner));
-                    _tools.Add(typeof(SuRunner));
-                    _tools.Add(typeof(SudoRunner));
+                    appBuilder = appBuilder
+                        .WithTool<AttachTool>()
+                        .WithTool<RobocopyTool>()
+                        .WithTool<SuTool>()
+                        .WithTool<SudoTool>();
                 }
 
-                var parser = new Parser(options =>
+                var app = appBuilder.Build();
+                foreach (var command in app.Commands.GetRootCommands())
                 {
-                    options.HelpWriter = null;
-                    options.IgnoreUnknownArguments = true;
-                });
-                var parserResult = parser.ParseArguments(args, _tools.ToArray());
+                    if (command.OptionsInstance is IHelpPageMutator mutator)
+                        helpPage.WithMutator(mutator);
+                }
 
-                return (int)parserResult.MapResult(
-                    options => RunTool(options, args),
-                    errors =>
-                    {
-                        return (errors.IsHelp() || errors.IsVersion()) && parserResult.TypeInfo.Current != typeof(NullInstance)
-                            ? RunTool(Activator.CreateInstance(parserResult.TypeInfo.Current)!, args)
-                            : DisplayHelp(parserResult, errors);
-                    });
+                return app.Run(args);
             }
             catch (Exception ex)
             {
@@ -77,7 +75,7 @@ namespace MaSch.CommandLineTools
                     {
                         var msg = eex.Message;
                         if (eex.InnerException != null)
-                            msg += $"  - {eex.Message.Indent(4, false)}";
+                            msg += $"   - {eex.Message.Indent(4, false)}";
 
                         if (eex.ExitCode.IsInfo())
                         {
@@ -98,63 +96,10 @@ namespace MaSch.CommandLineTools
                 }
                 else
                 {
-                    console.WriteLineWithColor($"An unhandeled exception occurred:{NewLine}  - {ex.ToString().Indent(4, false)}", ConsoleColor.Red);
+                    console.WriteLineWithColor($"An unhandeled exception occurred:{Environment.NewLine}  - {ex.ToString().Indent(4, false)}", ConsoleColor.Red);
                     return (int)ExitCode.UnknownError;
                 }
             }
-        }
-
-        private static ExitCode RunTool(object runner, string[] args)
-        {
-            return ((IToolRunner)runner).Run(args.Skip(1).ToArray());
-        }
-
-        private static ExitCode DisplayHelp<T>(ParserResult<T> result, IEnumerable<Error> errors)
-        {
-            var console = ServiceContext.GetService<IConsoleService>();
-            HelpText helpText;
-            if (errors.IsVersion())
-            {
-                helpText = HelpText.AutoBuild(result);
-                AdjustHelpText(helpText);
-                AddToolVersions(helpText);
-            }
-            else
-            {
-                helpText = HelpText.AutoBuild(result, h =>
-                {
-                    AdjustHelpText(h);
-                    return h;
-                });
-            }
-
-            console.WriteLine(helpText);
-            return errors.IsVersion() || errors.IsHelp() ? ExitCode.Okay : ExitCode.ArgumentParseError;
-
-            void AdjustHelpText(HelpText h)
-            {
-                h.AdditionalNewLineAfterOption = false;
-                h.Heading = new HeadingInfo("MaSch Command Line Tools", Version.ToString(3));
-                h.Copyright = new CopyrightInfo("Marc Schmidt", 2020);
-                h.MaximumDisplayWidth = console.BufferSize.Width;
-            }
-        }
-
-        private static void AddToolVersions(HelpText helpText)
-        {
-            helpText.AddPreOptionsLine("\nTools:\n");
-
-            var toolInstances = (from tt in _tools
-                                 let ti = Activator.CreateInstance(tt) as IToolRunner
-                                 where ti != null
-                                 let verbName = tt.GetCustomAttribute<VerbAttribute>()?.Name
-                                 let name = ti.Options.DisplayName ?? tt.Name
-                                 let version = ti.Options.Version.ToString(3)
-                                 let copyright = new CopyrightInfo(ti.Options.Author, ti.Options.Year)
-                                 select (name, verbName, version, copyright)).ToArray();
-            helpText.AddPreOptionsLine(toolInstances.ToColumnsString(x => x.name, x => x.verbName, x => x.version, x => x.copyright));
-
-            helpText.AddPreOptionsLine(string.Empty);
         }
     }
 }

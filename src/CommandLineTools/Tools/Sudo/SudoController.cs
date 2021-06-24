@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Security.Principal;
 using System.Text.RegularExpressions;
 using MaSch.CommandLineTools.Common;
@@ -14,6 +15,7 @@ using MaSch.Core;
 
 namespace MaSch.CommandLineTools.Tools.Sudo
 {
+    [SupportedOSPlatform("windows")]
     public static class SudoController
     {
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -27,6 +29,17 @@ namespace MaSch.CommandLineTools.Tools.Sudo
             var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null).Value;
             if (!WindowsIdentity.GetCurrent().UserClaims.Any(x => x.Value == adminSid))
                 throw new ApplicationExitException(failExitCode, $"You must be an administrator to run {commandName}");
+        }
+
+        public static ExitCode Run(string? tool, Func<TerminalTool, string> argsFunc)
+        {
+            var t = GetTool(tool, out string toolName, ExitCode.SuRunUnknownTool);
+            return t switch
+            {
+                TerminalTool.PowerShell => Run(toolName, $"-noprofile -Command {argsFunc(t)} \nexit $LASTEXITCODE", ExitCode.SuRunUserDeclined),
+                TerminalTool.Cmd => Run(toolName, $"/c {argsFunc(t)} && exit ^%ERRORLEVEL^%", ExitCode.SuRunUserDeclined),
+                _ => ExitCode.SudoRunUnknownTool,
+            };
         }
 
         public static ExitCode Run(string fileName, string arguments, ExitCode declinedExitCode)
@@ -151,7 +164,7 @@ namespace MaSch.CommandLineTools.Tools.Sudo
             return history.Skip(history.Length - 2).First();
         }
 
-        public static Tool GetTool(string? toolName, out string actualToolName, ExitCode unknownExitCode)
+        public static TerminalTool GetTool(string? toolName, out string actualToolName, ExitCode unknownExitCode)
         {
             actualToolName = toolName ?? ParentProcessUtility.GetParentProcess()?.ProcessName ?? "powershell";
             return actualToolName.ToTool() ?? throw new ApplicationExitException(unknownExitCode, $"The tool \"{actualToolName}\" is unknown and currently cannot be used for su or sudo.");
