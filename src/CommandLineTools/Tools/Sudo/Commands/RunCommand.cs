@@ -21,7 +21,7 @@ namespace MaSch.CommandLineTools.Tools.Sudo.Commands
         [CliCommandOption("tool", Required = false, HelpText = "The command line tool to start (default is the tool that started this process - falls back to 'powershell' if parent process cannot be retrieved).")]
         public string? CommandLineToolName { get; set; }
 
-        [CliCommandValue(0, "command", Required = true)]
+        [CliCommandValue(0, "command", Required = true, HelpText = "The commands to execute.")]
         public IEnumerable<string> Commands { get; set; } = Array.Empty<string>();
 
         protected override int OnExecuteCommand(CliExecutionContext context)

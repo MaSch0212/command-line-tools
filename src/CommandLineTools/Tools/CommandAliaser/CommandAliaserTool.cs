@@ -8,14 +8,8 @@ using System.IO;
 
 namespace MaSch.CommandLineTools.Tools.CommandAliaser
 {
-    [CliCommand(
-        "alias",
-        HelpText = "Manages command aliases. Aliases to execute commands can be added, removed and listed.",
-        DisplayName = "Command Aliaser",
-        Version = "1.1.0",
-        Author = "Marc Schmidt",
-        Year = "2021",
-        Executable = false)]
+    [CliCommand("alias", HelpText = "Manages command aliases. Aliases to execute commands can be added, removed and listed.")]
+    [CliMetadata(DisplayName = "Command Aliaser", Version = "1.1.0", Author = "Marc Schmidt", Year = "2021")]
     public class CommandAliaserTool : CltToolBase
     {
         public static readonly string CommandsPath = Path.Combine(AppContext.BaseDirectory, "commands");

@@ -13,14 +13,8 @@ using System.Reflection;
 
 namespace MaSch.CommandLineTools.Tools.RobocopyRunner
 {
-    [CliCommand(
-        "rcx",
-        HelpText = "Provides a different way to execute robocopy. Also contains some robocopy extensions.",
-        DisplayName = "Robocopy Runner",
-        Version = "1.1.0",
-        Author = "Marc Schmidt",
-        Year = "2021",
-        Executable = false)]
+    [CliCommand("rcx", HelpText = "Provides a different way to execute robocopy. Also contains some robocopy extensions.")]
+    [CliMetadata(DisplayName = "Robocopy Runner", Version = "1.1.0", Author = "Marc Schmidt", Year = "2021")]
     public class RobocopyTool : CltToolBase, IOptionOrderMutator
     {
         private static readonly (int Code, string Description)[] RobocopyExitCodes =

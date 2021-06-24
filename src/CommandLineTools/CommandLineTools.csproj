@@ -14,7 +14,7 @@
     <OutputPath>..\..\bin\$(Configuration)\</OutputPath>
 
     <!-- Package Info -->
-    <Version>1.4.0</Version>
+    <Version>1.4.1</Version>
     <Authors>Marc Schmidt</Authors>
   </PropertyGroup>
 
@@ -24,7 +24,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MaSch.Console.Cli" Version="0.2.0" />
+    <PackageReference Include="MaSch.Console.Cli" Version="0.3.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -42,8 +42,30 @@
     <ProjectReference Include="C:\TFS\MaSch\src\Console.Cli\MaSch.Console.Cli.csproj" />
   </ItemGroup>-->
   
-  <Target Name="PowerShellAfterPublish" AfterTargets="Publish">
-    <Exec Command="pwsh -File &quot;$(ProjectDir)Properties\PostPublish.ps1&quot; -PublishDir &quot;$(PublishDir)\&quot; -ProjectDir &quot;$(ProjectDir)\&quot; -OutputZipPath &quot;$(OutputZipPath)&quot;" />
+  <Target Name="PostPublish" AfterTargets="Publish">
+    <PropertyGroup>
+      <SubDirPath>$(PublishDir)\$(RootNamespace)</SubDirPath>
+    </PropertyGroup>
+    
+    <ItemGroup>
+      <SourceFile Include="$(PublishDir)/*" Exclude="**/*.cmd;**/*.ps1" />
+      <ScriptFile Include="$(ProjectDir)/Tools/**/*.cmd" />
+      <ScriptFile Include="$(ProjectDir)/Tools/**/*.ps1" />
+    </ItemGroup>
+    
+    <!-- Cleanup -->
+    <RemoveDir Directories="$(SubDirPath)" />
+    <MakeDir Directories="$(SubDirPath)" />
+    
+    <!-- Move binaries and copy scripts -->
+    <Move SourceFiles="@(SourceFile)" DestinationFolder="$(SubDirPath)" />
+    <Copy SourceFiles="@(ScriptFile)" DestinationFolder="$(PublishDir)" />
+    
+    <!-- Create ZIP -->
+    <MakeDir Directories="$(OutputZipDir)" />
+    <ZipDirectory SourceDirectory="$(PublishDir)" DestinationFile="$(OutputZipPath)" Overwrite="true" />
+  
+    <!-- Write Version for Pipeline -->
     <Message Text="##vso[task.setvariable variable=AppVersion;]$(Version)" Importance="high" />
   </Target>
 

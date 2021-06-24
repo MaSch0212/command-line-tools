@@ -8,14 +8,8 @@ using System.Runtime.Versioning;
 namespace MaSch.CommandLineTools.Tools.Sudo
 {
     [SupportedOSPlatform("windows")]
-    [CliCommand(
-        "sudo",
-        HelpText = "Executes a commands in an elevated process.",
-        DisplayName = "Super User Do",
-        Version = "1.1.0",
-        Author = "Marc Schmidt",
-        Year = "2021",
-        Executable = false)]
+    [CliCommand("sudo", HelpText = "Executes a commands in an elevated process.")]
+    [CliMetadata(DisplayName = "Super User Do", Version = "1.1.0", Author = "Marc Schmidt", Year = "2021")]
     public class SudoTool : CltToolBase
     {
         public override void RegisterSubCommands(CliApplicationBuilder builder)

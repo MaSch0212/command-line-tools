@@ -6,14 +6,8 @@ using MaSch.Console.Cli.Configuration;
 
 namespace MaSch.CommandLineTools.Tools.DirectoryAliaser
 {
-    [CliCommand(
-        "cdx",
-        HelpText = "Manages directory aliases. Aliases to directories can be added, removed and requested.",
-        DisplayName = "Directory Aliaser",
-        Version = "1.3.0",
-        Author = "Marc Schmidt",
-        Year = "2021",
-        Executable = false)]
+    [CliCommand("cdx", HelpText = "Manages directory aliases. Aliases to directories can be added, removed and requested.")]
+    [CliMetadata(DisplayName = "Directory Aliaser", Version = "1.3.0", Author = "Marc Schmidt", Year = "2021")]
     public class DirectoryAliaserTool : CltToolBase
     {
         public override void RegisterSubCommands(CliApplicationBuilder builder)

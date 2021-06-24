@@ -9,13 +9,8 @@ using System.Runtime.Versioning;
 namespace MaSch.CommandLineTools.Tools.Attach
 {
     [SupportedOSPlatform("windows")]
-    [CliCommand(
-        "attach",
-        HelpText = "Attaches console output to a given process.",
-        DisplayName = "Attach",
-        Version = "1.1.0",
-        Author = "Marc Schmidt",
-        Year = "2021")]
+    [CliCommand("attach", HelpText = "Attaches console output to a given process.")]
+    [CliMetadata(DisplayName = "Attach", Version = "1.1.0", Author = "Marc Schmidt", Year = "2021")]
     public class AttachTool : CltToolBase, ICliCommandExecutor
     {
         [CliCommandOption('p', "process", Required = true, HelpText = "The process to which to attach.")]

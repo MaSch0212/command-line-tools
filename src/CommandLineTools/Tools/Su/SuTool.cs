@@ -10,13 +10,8 @@ using System.Runtime.Versioning;
 namespace MaSch.CommandLineTools.Tools.Su
 {
     [SupportedOSPlatform("windows")]
-    [CliCommand(
-        "su",
-        HelpText = "Elevates the current command line to administrative rights.",
-        DisplayName = "Super User",
-        Version = "1.1.0",
-        Author = "Marc Schmidt",
-        Year = "2021")]
+    [CliCommand("su", HelpText = "Elevates the current command line to administrative rights.")]
+    [CliMetadata(DisplayName = "Super User", Version = "1.1.0", Author = "Marc Schmidt", Year = "2021")]
     public class SuTool : CltToolBase, ICliCommandExecutor
     {
         [CliCommandOption('t', "tool", Required = false, HelpText = "The command line tool to start (default is the tool that started this process - falls back to 'powershell' if parent process cannot be retrieved).")]

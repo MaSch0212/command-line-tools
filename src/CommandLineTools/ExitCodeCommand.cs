@@ -6,6 +6,7 @@ using MaSch.Console.Cli.Runtime;
 namespace MaSch.CommandLineTools
 {
     [CliCommand("exitcodes", HelpText = "Display exit codes that this tool can return.")]
+    [CliParserOptions(IgnoreAdditionalValues = true, IgnoreUnknownOptions = true)]
     public class ExitCodeCommand : ICliCommandExecutor
     {
         public int ExecuteCommand(CliExecutionContext context)

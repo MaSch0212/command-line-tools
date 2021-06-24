@@ -1,5 +1,5 @@
-﻿using MaSch.CommandLineTools.Extensions;
-using MaSch.Console;
+﻿using MaSch.Console;
+using MaSch.Console.Cli.Configuration;
 using MaSch.Console.Cli.Runtime;
 using MaSch.Console.Controls;
 using MaSch.Console.Controls.Table;
@@ -18,6 +18,9 @@ namespace MaSch.CommandLineTools.Tools.DirectoryAliaser.Commands
 
         protected Configuration Config { get; private set; }
         protected bool ConfigChanged { get; set; }
+
+        [CliCommandOption("from-script", Hidden = true)]
+        public bool WasStartedFromScript { get; set; }
 
         protected CommandBase()
         {
