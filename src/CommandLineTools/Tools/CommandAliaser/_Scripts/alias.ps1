@@ -1,3 +1,4 @@
+$env:MASCH_CLT_ISSCRIPTCONTEXT = "true"
 & "$PSScriptRoot\MaSch.CommandLineTools\CommandLineTools.exe" alias $args
 
 if ($args -and $args.Length -gt 0 -and ($args[0].StartsWith("install", "OrdinalIgnoreCase") -or $args[0].StartsWith("uninstall", "OrdinalIgnoreCase"))) {

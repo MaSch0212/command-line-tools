@@ -19,9 +19,6 @@ namespace MaSch.CommandLineTools.Tools.DirectoryAliaser.Commands
         protected Configuration Config { get; private set; }
         protected bool ConfigChanged { get; set; }
 
-        [CliCommandOption("from-script", Hidden = true)]
-        public bool WasStartedFromScript { get; set; }
-
         protected CommandBase()
         {
             Config = new Configuration();

@@ -39,7 +39,7 @@ namespace MaSch.CommandLineTools
                     .WithHelpPage(helpPage)
                     .Configure(o =>
                     {
-                        o.CliName = "clt";
+                        o.CliName = ToolCommandBase.IsExecutedFromScript ? string.Empty : "clt";
                         o.Name = "MaSch Command Line Tools";
                         o.Author = "Marc Schmidt";
                         o.Year = "2021";

@@ -1,3 +1,5 @@
+$env:MASCH_CLT_ISSCRIPTCONTEXT = "true"
+
 if ($args[0] -eq "please") {
     $command = (Get-History | Select-Object -Last 1).CommandLine
     if (-not [String]::IsNullOrEmpty($command)) {

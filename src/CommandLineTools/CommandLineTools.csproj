@@ -14,7 +14,7 @@
     <OutputPath>..\..\bin\$(Configuration)\</OutputPath>
 
     <!-- Package Info -->
-    <Version>1.4.2</Version>
+    <Version>1.4.3</Version>
     <Authors>Marc Schmidt</Authors>
   </PropertyGroup>
 

@@ -22,7 +22,7 @@ namespace MaSch.CommandLineTools.Tools.DirectoryAliaser.Commands
             return (int)HandleCopy(ExitCode.CdxOpenMissingAlias, ExitCode.CdxOpenAliasNotFound, x =>
             {
                 File.WriteAllText(tmpFile, x);
-                if (!WasStartedFromScript)
+                if (!IsExecutedFromScript)
                 {
                     Console.WriteLineWithColor(
                         "This open command was not executed with a supported script. " +
