@@ -2,6 +2,7 @@
 
 set MASCH_CLT_ISSCRIPTCONTEXT=true
 call "%~dp0\MaSch.CommandLineTools\CommandLineTools.exe" alias %*
+set MASCH_CLT_ISSCRIPTCONTEXT=false
 
 set args=%*
 if /i "%args:~0,7%"=="install" goto updatepath
