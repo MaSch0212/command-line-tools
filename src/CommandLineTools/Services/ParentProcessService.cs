@@ -2,33 +2,38 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 #pragma warning disable SA1310 // Field names should not contain underscore
 
-namespace MaSch.CommandLineTools.Utilities
+namespace MaSch.CommandLineTools.Services
 {
     /// <summary>
     /// A utility class to determine a process parent. See https://stackoverflow.com/questions/394816/how-to-get-parent-process-in-net-in-managed-way.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct ParentProcessUtility
+    [SupportedOSPlatform("windows")]
+    public class ParentProcessService : IParentProcessService
     {
-        // These members must match PROCESS_BASIC_INFORMATION
-        internal IntPtr Reserved1;
-        internal IntPtr PebBaseAddress;
-        internal IntPtr Reserved2_0;
-        internal IntPtr Reserved2_1;
-        internal IntPtr UniqueProcessId;
-        internal IntPtr InheritedFromUniqueProcessId;
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct ProcessInformation
+        {
+            // These members must match PROCESS_BASIC_INFORMATION
+            internal IntPtr Reserved1;
+            internal IntPtr PebBaseAddress;
+            internal IntPtr Reserved2_0;
+            internal IntPtr Reserved2_1;
+            internal IntPtr UniqueProcessId;
+            internal IntPtr InheritedFromUniqueProcessId;
+        }
 
         [DllImport("ntdll.dll")]
-        private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref ParentProcessUtility processInformation, int processInformationLength, out int returnLength);
+        private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref ProcessInformation processInformation, int processInformationLength, out int returnLength);
 
         /// <summary>
         /// Gets the parent process of the current process.
         /// </summary>
         /// <returns>An instance of the Process class.</returns>
-        public static Process? GetParentProcess()
+        public Process? GetParentProcess()
         {
             return GetParentProcess(Process.GetCurrentProcess().Handle);
         }
@@ -38,7 +43,7 @@ namespace MaSch.CommandLineTools.Utilities
         /// </summary>
         /// <param name="id">The process id.</param>
         /// <returns>An instance of the Process class.</returns>
-        public static Process? GetParentProcess(int id)
+        public Process? GetParentProcess(int id)
         {
             Process process = Process.GetProcessById(id);
             return GetParentProcess(process.Handle);
@@ -49,9 +54,9 @@ namespace MaSch.CommandLineTools.Utilities
         /// </summary>
         /// <param name="handle">The process handle.</param>
         /// <returns>An instance of the Process class.</returns>
-        public static Process? GetParentProcess(IntPtr handle)
+        public Process? GetParentProcess(IntPtr handle)
         {
-            ParentProcessUtility pbi = default;
+            ProcessInformation pbi = default;
             int status = NtQueryInformationProcess(handle, 0, ref pbi, Marshal.SizeOf(pbi), out _);
             if (status != 0)
                 throw new Win32Exception(status);

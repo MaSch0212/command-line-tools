@@ -1,4 +1,5 @@
-﻿using MaSch.Console.Cli.Configuration;
+﻿using MaSch.CommandLineTools.Tools.Sudo.Services;
+using MaSch.Console.Cli.Configuration;
 using MaSch.Console.Cli.Runtime;
 using System.Runtime.Versioning;
 
@@ -8,6 +9,8 @@ namespace MaSch.CommandLineTools.Tools.Sudo.Commands
     [CliCommand("do", Hidden = true, ParentCommand = typeof(SudoTool))]
     public class DoCommand : ToolCommandBase
     {
+        private readonly ISudoService _sudoService;
+
         [CliCommandOption('f', "file", Required = true)]
         public string FileName { get; set; } = string.Empty;
 
@@ -17,9 +20,14 @@ namespace MaSch.CommandLineTools.Tools.Sudo.Commands
         [CliCommandOption('p', "process", Required = true)]
         public int ParentProcessId { get; set; }
 
+        public DoCommand(ISudoService sudoService)
+        {
+            _sudoService = sudoService;
+        }
+
         protected override int OnExecuteCommand(CliExecutionContext context)
         {
-            return (int)SudoController.Do(FileName, Arguments, ParentProcessId);
+            return (int)_sudoService.Do(FileName, Arguments, ParentProcessId);
         }
     }
 }

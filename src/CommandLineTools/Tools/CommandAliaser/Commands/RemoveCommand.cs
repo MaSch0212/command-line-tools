@@ -1,5 +1,5 @@
 ﻿using MaSch.CommandLineTools.Common;
-using MaSch.CommandLineTools.Tools.CommandAliaser.Utilities;
+using MaSch.CommandLineTools.Tools.CommandAliaser.Services;
 using MaSch.Console;
 using MaSch.Console.Cli.Configuration;
 using MaSch.Console.Cli.Runtime;
@@ -10,6 +10,9 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
     [CliCommand("remove", HelpText = "Remove existing command alias.", ParentCommand = typeof(CommandAliaserTool))]
     public class RemoveCommand : CommandBase
     {
+        private readonly IConsoleService _console;
+        private readonly ICommandsService _commandsService;
+
         public override bool IsScopeExcluse { get; } = false;
 
         [CliCommandValue(0, "alias", Required = true, HelpText = "The alias to remove.")]
@@ -27,6 +30,12 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
         [CliCommandOption('f', "force", HelpText = "Forces the deletion of the alias.")]
         public bool Force { get; set; }
 
+        public RemoveCommand(IConsoleService console, ICommandsService commandsService)
+        {
+            _console = console;
+            _commandsService = commandsService;
+        }
+
         protected override int OnExecuteCommand(CliExecutionContext context)
         {
             if (!Global && !Local && !User)
@@ -43,7 +52,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
 
             if (removeCount == 0)
             {
-                Console.WriteLineWithColor($"The alias \"{Alias}\" does not exist in any scope.", ConsoleColor.Red);
+                _console.WriteLineWithColor($"The alias \"{Alias}\" does not exist in any scope.", ConsoleColor.Red);
                 return (int)ExitCode.AliasRemoveNotExists;
             }
 
@@ -51,27 +60,27 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
 
             bool RemoveCommand(string scopeName, string path)
             {
-                var commands = CommandsUtility.LoadCommands(path);
-                if (commands.TryGetCommand(Alias, out var command))
+                var commands = _commandsService.LoadCommands(path);
+                if (_commandsService.TryGetCommand(commands, Alias, out var command))
                 {
                     commands.Remove(command.Alias!);
 
-                    if (!CommandsUtility.SaveCommands(path, commands))
+                    if (!_commandsService.SaveCommands(path, commands))
                         throw new ApplicationExitException(ExitCode.AliasRemoveFailedModifyJson);
 
                     bool success = true;
-                    success &= CommandsUtility.DeleteScriptFile(path, command.Alias!, TerminalTool.PowerShell);
-                    success &= CommandsUtility.DeleteScriptFile(path, command.Alias!, TerminalTool.Cmd);
+                    success &= _commandsService.DeleteScriptFile(path, command.Alias!, TerminalTool.PowerShell);
+                    success &= _commandsService.DeleteScriptFile(path, command.Alias!, TerminalTool.Cmd);
 
                     removeCount++;
                     if (success)
-                        Console.WriteLineWithColor($"Successfully removed command \"{command.Alias}\" from scope \"{scopeName}\".", ConsoleColor.Green);
+                        _console.WriteLineWithColor($"Successfully removed command \"{command.Alias}\" from scope \"{scopeName}\".", ConsoleColor.Green);
                     else
-                        Console.WriteLineWithColor($"Partially removed command \"{command.Alias}\" from scope \"{scopeName}\".", ConsoleColor.Yellow);
+                        _console.WriteLineWithColor($"Partially removed command \"{command.Alias}\" from scope \"{scopeName}\".", ConsoleColor.Yellow);
                     return success;
                 }
 
-                Console.WriteLineWithColor($"The alias \"{Alias}\" does not exist in the scope \"{scopeName}\".", ConsoleColor.Yellow);
+                _console.WriteLineWithColor($"The alias \"{Alias}\" does not exist in the scope \"{scopeName}\".", ConsoleColor.Yellow);
                 return true;
             }
         }

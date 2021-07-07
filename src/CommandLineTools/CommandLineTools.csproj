@@ -14,7 +14,7 @@
     <OutputPath>..\..\bin\$(Configuration)\</OutputPath>
 
     <!-- Package Info -->
-    <Version>1.4.3</Version>
+    <Version>1.4.4</Version>
     <Authors>Marc Schmidt</Authors>
   </PropertyGroup>
 
@@ -24,7 +24,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MaSch.Console.Cli" Version="0.3.2" />
+    <PackageReference Include="MaSch.Console.Cli" Version="0.4.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

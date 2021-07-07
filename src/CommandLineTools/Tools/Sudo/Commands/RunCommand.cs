@@ -1,4 +1,5 @@
 ﻿using MaSch.CommandLineTools.Common;
+using MaSch.CommandLineTools.Tools.Sudo.Services;
 using MaSch.Console.Cli.Configuration;
 using MaSch.Console.Cli.Runtime;
 using MaSch.Core.Extensions;
@@ -18,15 +19,22 @@ namespace MaSch.CommandLineTools.Tools.Sudo.Commands
         ParentCommand = typeof(SudoTool))]
     public class RunCommand : ToolCommandBase
     {
+        private readonly ISudoService _sudoService;
+
         [CliCommandOption("tool", Required = false, HelpText = "The command line tool to start (default is the tool that started this process - falls back to 'powershell' if parent process cannot be retrieved).")]
         public string? CommandLineToolName { get; set; }
 
         [CliCommandValue(0, "command", Required = true, HelpText = "The commands to execute.")]
         public IEnumerable<string> Commands { get; set; } = Array.Empty<string>();
 
+        public RunCommand(ISudoService sudoService)
+        {
+            _sudoService = sudoService;
+        }
+
         protected override int OnExecuteCommand(CliExecutionContext context)
         {
-            SudoController.VerifyAdminRole("sudo", ExitCode.SudoRunNoAdmin);
+            _sudoService.VerifyAdminRole("sudo", ExitCode.SudoRunNoAdmin);
 
             var allArgs = Environment.GetCommandLineArgs();
             IEnumerable<string> args = allArgs.Skip(string.Equals(allArgs[2], "run", StringComparison.OrdinalIgnoreCase) ? 3 : 2);
@@ -38,7 +46,7 @@ namespace MaSch.CommandLineTools.Tools.Sudo.Commands
             if (tIdx >= 0 && (ddIdx < 0 || tIdx < ddIdx))
                 args = args.Take(tIdx).Concat(args.Skip(tIdx + 2));
 
-            return (int)SudoController.Run(CommandLineToolName, x => x switch
+            return (int)_sudoService.Run(CommandLineToolName, x => x switch
             {
                 TerminalTool.PowerShell => string.Join(" ", args.Select(SerializePS)),
                 _ => string.Join(" ", args.Select(SerializeCmd)),

@@ -16,11 +16,13 @@ namespace MaSch.CommandLineTools.Tools.DirectoryAliaser.Commands
 
         protected static readonly char[] IllegalAliasCharacters = new[] { '\\', '/' };
 
+        protected IConsoleService Console { get; }
         protected Configuration Config { get; private set; }
         protected bool ConfigChanged { get; set; }
 
-        protected CommandBase()
+        protected CommandBase(IConsoleService console)
         {
+            Console = console;
             Config = new Configuration();
         }
 

@@ -3,15 +3,15 @@ using System;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
+namespace MaSch.CommandLineTools.Tools.CommandAliaser.Services
 {
-    public static class TemplateUtility
+    public class TemplateService : ITemplateService
     {
         private static readonly Regex AllArgsRegex = new Regex(@"(?<!\w)(\$args(?![\[])|%\*)(?!\w)");
         private static readonly Regex SpecificCmdArgsRegex = new Regex(@"(?<!\w)%(?<nr>\d+)(?!\w)");
         private static readonly Regex SpecificPowerShellArgsRegex = new Regex(@"(?<!\w)\$args\[(?<nr>\d+)\](?!\w)");
 
-        public static string GetPowerShellCommandScript(string alias, string command, string description, TerminalTool? targetTool)
+        public string GetPowerShellCommandScript(string alias, string command, string description, TerminalTool? targetTool)
         {
             var result = new StringBuilder()
                 .AppendLine($"# Alias:{alias}")
@@ -38,7 +38,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
             return result.ToString();
         }
 
-        public static string GetCmdCommandScript(string alias, string command, string description, TerminalTool? targetTool)
+        public string GetCmdCommandScript(string alias, string command, string description, TerminalTool? targetTool)
         {
             var result = new StringBuilder()
                 .AppendLine("@echo off")

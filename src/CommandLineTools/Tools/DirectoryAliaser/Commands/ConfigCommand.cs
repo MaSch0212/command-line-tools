@@ -1,5 +1,4 @@
 ﻿using MaSch.CommandLineTools.Common;
-using MaSch.CommandLineTools.Extensions;
 using MaSch.Console;
 using MaSch.Console.Cli.Configuration;
 using MaSch.Console.Cli.Runtime;
@@ -13,6 +12,11 @@ namespace MaSch.CommandLineTools.Tools.DirectoryAliaser.Commands
     {
         [CliCommandOption('a', "auto-var", Required = false, HelpText = "Sets a value indicating whether an environment variable should be created when adding a new directory alias.")]
         public bool? AutoInstallVariable { get; set; }
+
+        public ConfigCommand(IConsoleService console)
+            : base(console)
+        {
+        }
 
         protected override int OnExecuteCommand(CliExecutionContext context)
         {

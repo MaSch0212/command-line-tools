@@ -1,6 +1,6 @@
 ﻿using MaSch.CommandLineTools.Common;
 using MaSch.CommandLineTools.Tools.CommandAliaser.Models;
-using MaSch.CommandLineTools.Tools.CommandAliaser.Utilities;
+using MaSch.CommandLineTools.Tools.CommandAliaser.Services;
 using MaSch.Console;
 using MaSch.Console.Cli.Configuration;
 using MaSch.Console.Cli.Runtime;
@@ -16,6 +16,9 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
         ParentCommand = typeof(CommandAliaserTool))]
     public class CleanupCommand : CommandBase
     {
+        private readonly IConsoleService _console;
+        private readonly ICommandsService _commandsService;
+
         public override bool IsScopeExcluse { get; } = false;
 
         [CliCommandOption('g', "global", HelpText = "Clean up global path.")]
@@ -26,6 +29,12 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
 
         [CliCommandOption('u', "user", HelpText = "Clean up user path.")]
         public override bool User { get; set; }
+
+        public CleanupCommand(IConsoleService console, ICommandsService commandsService)
+        {
+            _console = console;
+            _commandsService = commandsService;
+        }
 
         protected override int OnExecuteCommand(CliExecutionContext context)
         {
@@ -53,17 +62,17 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
             {
                 bool cs = true, ds = true;
 
-                Console.WriteLine($"Cleaning up \"{scopeName}\"...");
-                var commands = CommandsUtility.LoadCommands(path);
+                _console.WriteLine($"Cleaning up \"{scopeName}\"...");
+                var commands = _commandsService.LoadCommands(path);
 
                 foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.TopDirectoryOnly))
                 {
                     if (Path.GetFileName(file) == CommandsFileName)
                         continue;
-                    if (!Path.GetExtension(file).In(".ps1", ".cmd") || !commands.TryGetCommand(Path.GetFileNameWithoutExtension(file), out _))
+                    if (!Path.GetExtension(file).In(".ps1", ".cmd") || !_commandsService.TryGetCommand(commands, Path.GetFileNameWithoutExtension(file), out _))
                     {
-                        if (CommandsUtility.DeleteScriptFile(file))
-                            Console.WriteLineWithColor($"Successfully deletes file \"{Path.GetFileName(file)}\".", ConsoleColor.Green);
+                        if (_commandsService.DeleteScriptFile(file))
+                            _console.WriteLineWithColor($"Successfully deletes file \"{Path.GetFileName(file)}\".", ConsoleColor.Green);
                         else
                             ds = false;
                     }
@@ -79,18 +88,18 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
                 deleteSuccess &= ds;
 
                 if (cs && ds)
-                    Console.WriteLineWithColor($"Successfully cleaned up \"{scopeName}\".", ConsoleColor.Green);
+                    _console.WriteLineWithColor($"Successfully cleaned up \"{scopeName}\".", ConsoleColor.Green);
                 else
-                    Console.WriteLineWithColor($"Partially cleaned up \"{scopeName}\".", ConsoleColor.Yellow);
-                Console.WriteLine();
+                    _console.WriteLineWithColor($"Partially cleaned up \"{scopeName}\".", ConsoleColor.Yellow);
+                _console.WriteLine();
             }
 
             bool EnsureScript(string path, Command command, TerminalTool tool)
             {
-                if (!File.Exists(CommandsUtility.GetScriptFilePath(path, command.Alias!, tool)))
+                if (!File.Exists(_commandsService.GetScriptFilePath(path, command.Alias!, tool)))
                 {
-                    if (CommandsUtility.WriteScriptFile(path, command.Alias, tool, command.CommandText, command.Description, command.Tool))
-                        Console.WriteLineWithColor($"Successfully created \"{tool}\"-script for alias \"{command.Alias}\".", ConsoleColor.Green);
+                    if (_commandsService.WriteScriptFile(path, command.Alias, tool, command.CommandText, command.Description, command.Tool))
+                        _console.WriteLineWithColor($"Successfully created \"{tool}\"-script for alias \"{command.Alias}\".", ConsoleColor.Green);
                     else
                         return false;
                 }

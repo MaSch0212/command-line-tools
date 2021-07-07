@@ -1,4 +1,5 @@
 ﻿using MaSch.CommandLineTools.Common;
+using MaSch.Console;
 using MaSch.Console.Cli.Configuration;
 using MaSch.Console.Cli.Runtime;
 
@@ -7,6 +8,11 @@ namespace MaSch.CommandLineTools.Tools.DirectoryAliaser.Commands
     [CliCommand("install", HelpText = "Adds all directory aliases as environment variables starting with 'cdx_'", ParentCommand = typeof(DirectoryAliaserTool))]
     public class InstallCommand : CommandBase
     {
+        public InstallCommand(IConsoleService console)
+            : base(console)
+        {
+        }
+
         protected override int OnExecuteCommand(CliExecutionContext context)
         {
             foreach (var path in Config.Paths)

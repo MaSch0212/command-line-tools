@@ -1,4 +1,5 @@
 ﻿using MaSch.CommandLineTools.Common;
+using MaSch.Console;
 using MaSch.Console.Cli.Configuration;
 using MaSch.Console.Cli.Runtime;
 
@@ -12,6 +13,11 @@ namespace MaSch.CommandLineTools.Tools.DirectoryAliaser.Commands
 
         [CliCommandValue(1, "subdirectory", Required = false, HelpText = "The sub directory to copy.")]
         public override string? SubDirectory { get; set; }
+
+        public CopyCommand(IConsoleService console)
+            : base(console)
+        {
+        }
 
         protected override int OnExecuteCommand(CliExecutionContext context)
         {

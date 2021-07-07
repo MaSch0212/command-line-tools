@@ -1,4 +1,4 @@
-﻿using MaSch.CommandLineTools.Utilities;
+﻿using MaSch.CommandLineTools.Services;
 using MaSch.Console;
 using MaSch.Console.Cli.Runtime;
 using MaSch.Console.Controls;
@@ -13,10 +13,19 @@ using System.Text.RegularExpressions;
 
 namespace MaSch.CommandLineTools.Tools.RobocopyRunner
 {
-    public class RobocopyExecutor : ICliCommandExecutor<IRobocopyOptions>
+    public class RobocopyExecutor : ICliExecutor<IRobocopyOptions>
     {
         private static readonly Regex FileRegex = new(@"(?<size>(?<=\s+)\d+(?=\t))\s+(?<file>.+(?=$))", RegexOptions.Compiled);
         private static readonly Regex PercentRegex = new(@"[\d\.\,]+(?=%)", RegexOptions.Compiled);
+
+        private readonly IConsoleService _console;
+        private readonly IProcessService _processService;
+
+        public RobocopyExecutor(IConsoleService console, IProcessService processService)
+        {
+            _console = console;
+            _processService = processService;
+        }
 
         public int ExecuteCommand(CliExecutionContext context, IRobocopyOptions parameters)
         {
@@ -100,9 +109,9 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
                 allArgs.Append($" \"{string.Join("\" \"", parameters.AdditionalRobocopyArguments)}\"");
 
             if (cmo?.ShowTotalProgress == true)
-                return RunRobocopyWithProgress(context.Console, cmo, allArgs.ToString());
+                return RunRobocopyWithProgress(_console, cmo, allArgs.ToString());
             else
-                return ProcessUtility.RunProcess("robocopy", allArgs.ToString(), x => context.Console.WriteLine(x), x => context.Console.WriteLineWithColor(x, ConsoleColor.Red));
+                return _processService.RunProcess("robocopy", allArgs.ToString(), x => _console.WriteLine(x), x => _console.WriteLineWithColor(x, ConsoleColor.Red));
         }
 
         private int RunRobocopyWithProgress(IConsoleService console, IRobocopyCopyMoveOptions options, string arguments)
@@ -148,7 +157,7 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
                     testArgs += " /MT";
                 if (options.VerboseLogging)
                     WriteLine("Executing: robocopy " + testArgs, ConsoleColor.DarkGray);
-                ProcessUtility.RunProcess("robocopy", testArgs, OnNewOutput_Test, error => WriteLine(error, ConsoleColor.Red));
+                _processService.RunProcess("robocopy", testArgs, OnNewOutput_Test, error => WriteLine(error, ConsoleColor.Red));
 
                 if (totalBytes > 0)
                 {
@@ -164,7 +173,7 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
                     var runArgs = arguments + " /NC /BYTES /NJH /NJS";
                     if (options.VerboseLogging)
                         WriteLine("Executing: robocopy " + runArgs, ConsoleColor.DarkGray);
-                    result = ProcessUtility.RunProcess("robocopy", runArgs, OnNewOutput_Copy, error => WriteLine(error, ConsoleColor.Red));
+                    result = _processService.RunProcess("robocopy", runArgs, OnNewOutput_Copy, error => WriteLine(error, ConsoleColor.Red));
 
                     p2.Hide(true);
                 }

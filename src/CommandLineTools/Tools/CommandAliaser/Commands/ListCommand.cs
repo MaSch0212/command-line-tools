@@ -1,6 +1,5 @@
 ﻿using MaSch.CommandLineTools.Common;
-using MaSch.CommandLineTools.Extensions;
-using MaSch.CommandLineTools.Tools.CommandAliaser.Utilities;
+using MaSch.CommandLineTools.Tools.CommandAliaser.Services;
 using MaSch.Console;
 using MaSch.Console.Cli.Configuration;
 using MaSch.Console.Cli.Runtime;
@@ -15,6 +14,9 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
     [CliCommand("list", IsDefault = true, HelpText = "Lists all command aliases.", ParentCommand = typeof(CommandAliaserTool))]
     public class ListCommand : CommandBase
     {
+        private readonly IConsoleService _console;
+        private readonly ICommandsService _commandsService;
+
         public override bool IsScopeExcluse { get; } = false;
 
         [CliCommandOption('g', "global", HelpText = "Only show global commands.")]
@@ -26,6 +28,12 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
         [CliCommandOption('u', "user", HelpText = "Only show user commands.")]
         public override bool User { get; set; }
 
+        public ListCommand(IConsoleService console, ICommandsService commandsService)
+        {
+            _console = console;
+            _commandsService = commandsService;
+        }
+
         protected override int OnExecuteCommand(CliExecutionContext context)
         {
             var paths = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User)?.Split(';').ToList() ?? new List<string>();
@@ -33,8 +41,8 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
             if (!Global && !Local && !User)
                 Global = Local = User = true;
 
-            Console.WriteLine("The following aliases are available:");
-            Console.WriteLine();
+            _console.WriteLine("The following aliases are available:");
+            _console.WriteLine();
 
             if (Global)
                 PrintList("Global", GlobalCommandsPath);
@@ -48,14 +56,14 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
             void PrintList(string scopeName, string path)
             {
                 bool isInstalled = paths.Contains(path, StringComparer.OrdinalIgnoreCase);
-                Console.Write($"{scopeName} (");
-                Console.WriteWithColor(isInstalled ? "Installed" : "Not Installed", isInstalled ? ConsoleColor.Green : ConsoleColor.Red);
-                Console.WriteLine(")");
+                _console.Write($"{scopeName} (");
+                _console.WriteWithColor(isInstalled ? "Installed" : "Not Installed", isInstalled ? ConsoleColor.Green : ConsoleColor.Red);
+                _console.WriteLine(")");
 
-                var commands = CommandsUtility.LoadCommands(path);
+                var commands = _commandsService.LoadCommands(path);
                 if (commands.Count > 0)
                 {
-                    new TableControl(Console)
+                    new TableControl(_console)
                     {
                         Margin = new(3, 0, 0, 0),
                         ShowColumnHeaders = false,
@@ -69,10 +77,10 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
                 }
                 else
                 {
-                    Console.WriteLine("   There are currently no aliases registered in this scope.");
+                    _console.WriteLine("   There are currently no aliases registered in this scope.");
                 }
 
-                Console.WriteLine();
+                _console.WriteLine();
             }
         }
     }

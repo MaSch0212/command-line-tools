@@ -1,7 +1,5 @@
 ﻿using MaSch.CommandLineTools.Common;
-using MaSch.CommandLineTools.Extensions;
 using MaSch.Console;
-using MaSch.Console.Cli;
 using MaSch.Console.Controls;
 using MaSch.Console.Controls.Table;
 using System;
@@ -10,11 +8,8 @@ using System.Reflection;
 
 namespace MaSch.CommandLineTools
 {
-    public abstract class CltToolBase : ICltTool
+    public abstract class CltToolBase
     {
-        public abstract void RegisterSubCommands(CliApplicationBuilder builder);
-        public abstract void WriteExitCodeInfo(IConsoleService console);
-
         protected static void WriteCommonExitCodes(IConsoleService console)
             => WriteExitCodeList(console, "General", x => x <= 0);
         protected static void WriteExitCodeList(IConsoleService console, string title, ExitCode toolCommand)

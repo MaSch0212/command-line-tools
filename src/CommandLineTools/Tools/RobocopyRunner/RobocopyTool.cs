@@ -1,5 +1,4 @@
 ﻿using MaSch.CommandLineTools.Common;
-using MaSch.CommandLineTools.Extensions;
 using MaSch.Console;
 using MaSch.Console.Cli;
 using MaSch.Console.Cli.Configuration;
@@ -15,6 +14,7 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
 {
     [CliCommand("rcx", HelpText = "Provides a different way to execute robocopy. Also contains some robocopy extensions.")]
     [CliMetadata(DisplayName = "Robocopy Runner", Version = "1.1.0", Author = "Marc Schmidt", Year = "2021")]
+    [CltTool(nameof(RegisterSubCommands), nameof(WriteExitCodeInfo))]
     public class RobocopyTool : CltToolBase, IOptionOrderMutator
     {
         private static readonly (int Code, string Description)[] RobocopyExitCodes =
@@ -29,14 +29,25 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
             (8, "Several files did not copy."),
         };
 
-        public override void RegisterSubCommands(CliApplicationBuilder builder)
+        public bool CanMutate(CliError error)
+        {
+            return error.AffectedCommand?.ParentCommand?.OptionsInstance == this;
+        }
+
+        public IEnumerable<ICliCommandOptionInfo> OrderOptions(CliError error, IEnumerable<ICliCommandOptionInfo> options)
+        {
+            var properties = error.AffectedCommand!.CommandType.GetTypeInfo().GetProperties().Select(x => x.Name).ToList();
+            return options.OrderBy(x => properties.IndexOf(x.PropertyName));
+        }
+
+        public static void RegisterSubCommands(CliApplicationBuilder builder)
         {
             builder.WithCommand(typeof(CopyOptions), typeof(RobocopyExecutor))
                    .WithCommand(typeof(MoveOptions), typeof(RobocopyExecutor))
                    .WithCommand(typeof(CreateOptions), typeof(RobocopyExecutor));
         }
 
-        public override void WriteExitCodeInfo(IConsoleService console)
+        public static void WriteExitCodeInfo(IConsoleService console)
         {
             WriteExitCodeList(console, "General", x => x < 0);
             WriteExitCodeList(console, "Copy (Default)", ExitCode.RobocopyCopy);
@@ -59,17 +70,6 @@ namespace MaSch.CommandLineTools.Tools.RobocopyRunner
                 },
                 Rows = RobocopyExitCodes.Select(x => new Row { Values = { x.Code.ToString(), x.Description } }).ToArray(),
             }.Render();
-        }
-
-        public bool CanMutate(ICliApplicationBase application, CliError error)
-        {
-            return error.AffectedCommand?.ParentCommand?.OptionsInstance == this;
-        }
-
-        public IEnumerable<ICliCommandOptionInfo> OrderOptions(ICliApplicationBase application, CliError error, IEnumerable<ICliCommandOptionInfo> options)
-        {
-            var properties = error.AffectedCommand!.CommandType.GetTypeInfo().GetProperties().Select(x => x.Name).ToList();
-            return options.OrderBy(x => properties.IndexOf(x.PropertyName));
         }
     }
 }

@@ -8,9 +8,10 @@ namespace MaSch.CommandLineTools.Tools.DirectoryAliaser
 {
     [CliCommand("cdx", HelpText = "Manages directory aliases. Aliases to directories can be added, removed and requested.")]
     [CliMetadata(DisplayName = "Directory Aliaser", Version = "1.3.0", Author = "Marc Schmidt", Year = "2021")]
+    [CltTool(nameof(RegisterSubCommands), nameof(WriteExitCodeInfo))]
     public class DirectoryAliaserTool : CltToolBase
     {
-        public override void RegisterSubCommands(CliApplicationBuilder builder)
+        public static void RegisterSubCommands(CliApplicationBuilder builder)
         {
             builder.WithCommand<OpenCommand>()
                    .WithCommand<CopyCommand>()
@@ -22,7 +23,7 @@ namespace MaSch.CommandLineTools.Tools.DirectoryAliaser
                    .WithCommand<ConfigCommand>();
         }
 
-        public override void WriteExitCodeInfo(IConsoleService console)
+        public static void WriteExitCodeInfo(IConsoleService console)
         {
             WriteCommonExitCodes(console);
             WriteExitCodeList(console, "Open (Default)", ExitCode.CdxOpen);

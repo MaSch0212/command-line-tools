@@ -9,29 +9,39 @@ using System.Security.Principal;
 using System.Text.RegularExpressions;
 using MaSch.CommandLineTools.Common;
 using MaSch.CommandLineTools.Extensions;
-using MaSch.CommandLineTools.Utilities;
+using MaSch.CommandLineTools.Services;
 using MaSch.Console;
-using MaSch.Core;
 
-namespace MaSch.CommandLineTools.Tools.Sudo
+namespace MaSch.CommandLineTools.Tools.Sudo.Services
 {
     [SupportedOSPlatform("windows")]
-    public static class SudoController
+    public class SudoService : ISudoService
     {
+        private readonly IConsoleService _console;
+        private readonly IParentProcessService _parentProcessService;
+        private readonly IOsService _osService;
+
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool AttachConsole(uint dwProcessId);
 
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         private static extern bool FreeConsole();
 
-        public static void VerifyAdminRole(string commandName, ExitCode failExitCode)
+        public void VerifyAdminRole(string commandName, ExitCode failExitCode)
         {
             var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null).Value;
             if (!WindowsIdentity.GetCurrent().UserClaims.Any(x => x.Value == adminSid))
                 throw new ApplicationExitException(failExitCode, $"You must be an administrator to run {commandName}");
         }
 
-        public static ExitCode Run(string? tool, Func<TerminalTool, string> argsFunc)
+        public SudoService(IConsoleService console, IParentProcessService parentProcessService, IOsService osService)
+        {
+            _console = console;
+            _parentProcessService = parentProcessService;
+            _osService = osService;
+        }
+
+        public ExitCode Run(string? tool, Func<TerminalTool, string> argsFunc)
         {
             var t = GetTool(tool, out string toolName, ExitCode.SuRunUnknownTool);
             return t switch
@@ -42,14 +52,13 @@ namespace MaSch.CommandLineTools.Tools.Sudo
             };
         }
 
-        public static ExitCode Run(string fileName, string arguments, ExitCode declinedExitCode)
+        public ExitCode Run(string fileName, string arguments, ExitCode declinedExitCode)
         {
-            var parentProcessId = ParentProcessUtility.GetParentProcess()?.Id ?? Process.GetCurrentProcess().Id;
-            if (OsUtility.IsRoot())
+            var parentProcessId = _parentProcessService.GetParentProcess()?.Id ?? Process.GetCurrentProcess().Id;
+            if (_osService.IsRoot())
                 return Do(fileName, arguments, parentProcessId);
 
-            var console = ServiceContext.GetService<IConsoleService>();
-            console.CancelKeyPress += IgnoreCancel;
+            _console.CancelKeyPress += IgnoreCancel;
 
             int watcherId;
             try
@@ -89,7 +98,7 @@ namespace MaSch.CommandLineTools.Tools.Sudo
             }
             finally
             {
-                console.CancelKeyPress -= IgnoreCancel;
+                _console.CancelKeyPress -= IgnoreCancel;
             }
 
             var exitCodeFile = Path.Combine(Path.GetTempPath(), $"sudo-watch-{watcherId}.tmp");
@@ -112,7 +121,7 @@ namespace MaSch.CommandLineTools.Tools.Sudo
             static void IgnoreCancel(object? sender, ConsoleCancelEventArgs e) => e.Cancel = true;
         }
 
-        public static ExitCode Do(string fileName, string arguments, int parentProcessId)
+        public ExitCode Do(string fileName, string arguments, int parentProcessId)
         {
             FreeConsole();
             AttachConsole((uint)parentProcessId);
@@ -146,10 +155,10 @@ namespace MaSch.CommandLineTools.Tools.Sudo
             return (ExitCode)p2.Id;
         }
 
-        public static string GetLastCmdCommand()
+        public string GetLastCmdCommand()
         {
             FreeConsole();
-            AttachConsole((uint)(ParentProcessUtility.GetParentProcess()?.Id ?? Environment.ProcessId));
+            AttachConsole((uint)(_parentProcessService.GetParentProcess()?.Id ?? Environment.ProcessId));
 
             var p = Process.Start(new ProcessStartInfo
             {
@@ -164,13 +173,13 @@ namespace MaSch.CommandLineTools.Tools.Sudo
             return history.Skip(history.Length - 2).First();
         }
 
-        public static TerminalTool GetTool(string? toolName, out string actualToolName, ExitCode unknownExitCode)
+        public TerminalTool GetTool(string? toolName, out string actualToolName, ExitCode unknownExitCode)
         {
-            actualToolName = toolName ?? ParentProcessUtility.GetParentProcess()?.ProcessName ?? "powershell";
+            actualToolName = toolName ?? _parentProcessService.GetParentProcess()?.ProcessName ?? "powershell";
             return actualToolName.ToTool() ?? throw new ApplicationExitException(unknownExitCode, $"The tool \"{actualToolName}\" is unknown and currently cannot be used for su or sudo.");
         }
 
-        public static void WriteExitCodeFile(int watchPid, int exitCode)
+        public void WriteExitCodeFile(int watchPid, int exitCode)
         {
             try
             {

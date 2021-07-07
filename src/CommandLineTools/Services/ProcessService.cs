@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
-namespace MaSch.CommandLineTools.Utilities
+namespace MaSch.CommandLineTools.Services
 {
-    public static class ProcessUtility
+    public class ProcessService : IProcessService
     {
-        private static readonly List<Process> _runningProcesses = new();
+        private readonly List<Process> _runningProcesses = new();
 
-        public static int RunProcess(string processName, string parameters, Action<string?>? onNewOutput, Action<string?>? onNewError)
+        public int RunProcess(string processName, string parameters, Action<string?>? onNewOutput, Action<string?>? onNewError)
             => RunProcess(processName, parameters, null, onNewOutput, onNewError);
 
-        public static int RunProcess(string processName, string parameters, string? workingDirectory, Action<string?>? onNewOutput, Action<string?>? onNewError)
+        public int RunProcess(string processName, string parameters, string? workingDirectory, Action<string?>? onNewOutput, Action<string?>? onNewError)
         {
             if (string.IsNullOrEmpty(workingDirectory))
                 workingDirectory = Environment.CurrentDirectory;
@@ -48,7 +48,7 @@ namespace MaSch.CommandLineTools.Utilities
             return process.ExitCode;
         }
 
-        public static void KillAllStartedProcesses()
+        public void KillAllStartedProcesses()
         {
             foreach (var p in _runningProcesses.ToArray())
             {

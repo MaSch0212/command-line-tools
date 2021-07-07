@@ -18,6 +18,11 @@ namespace MaSch.CommandLineTools.Tools.DirectoryAliaser.Commands
         [CliCommandOption('d', "directory", Required = false, HelpText = "The directory to which the aliases should be added. By default the current directory is used.")]
         public string Directory { get; set; } = Environment.CurrentDirectory;
 
+        public AddCommand(IConsoleService console)
+            : base(console)
+        {
+        }
+
         protected override int OnExecuteCommand(CliExecutionContext context)
         {
             if (Aliases.IsNullOrEmpty())

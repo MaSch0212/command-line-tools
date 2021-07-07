@@ -5,15 +5,23 @@ using System.IO;
 using MaSch.CommandLineTools.Common;
 using MaSch.CommandLineTools.Tools.CommandAliaser.Models;
 using MaSch.Console;
-using MaSch.Core;
 using MaSch.Core.Extensions;
 using Newtonsoft.Json;
 
-namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
+namespace MaSch.CommandLineTools.Tools.CommandAliaser.Services
 {
-    public static class CommandsUtility
+    public class CommandsService : ICommandsService
     {
-        public static Dictionary<string, Command> LoadCommands(string path)
+        private readonly IConsoleService _console;
+        private readonly ITemplateService _templateService;
+
+        public CommandsService(IConsoleService console, ITemplateService templateService)
+        {
+            _console = console;
+            _templateService = templateService;
+        }
+
+        public Dictionary<string, Command> LoadCommands(string path)
         {
             var commandsFilePath = Path.Combine(path, CommandAliaserTool.CommandsFileName);
             if (File.Exists(commandsFilePath))
@@ -30,7 +38,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
             }
         }
 
-        public static bool SaveCommands(string path, Dictionary<string, Command> commands)
+        public bool SaveCommands(string path, Dictionary<string, Command> commands)
         {
             var commandsFilePath = Path.Combine(path, CommandAliaserTool.CommandsFileName);
             try
@@ -42,14 +50,14 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
             }
             catch (Exception ex)
             {
-                ServiceContext.GetService<IConsoleService>().WriteLineWithColor($"Could not save commands file under \"{commandsFilePath}\": {ex.Message}", ConsoleColor.Red);
+                _console.WriteLineWithColor($"Could not save commands file under \"{commandsFilePath}\": {ex.Message}", ConsoleColor.Red);
                 return false;
             }
         }
 
-        public static bool TryGetCommand(this Dictionary<string, Command> commands, string? alias, [NotNullWhen(true)] out Command? command)
+        public bool TryGetCommand(Dictionary<string, Command> commands, string? alias, [NotNullWhen(true)] out Command? command)
         {
-            if (commands.Keys.TryFirst(x => string.Equals(x, alias, System.StringComparison.OrdinalIgnoreCase), out var key))
+            if (commands.Keys.TryFirst(x => string.Equals(x, alias, StringComparison.OrdinalIgnoreCase), out var key))
             {
                 command = commands[key];
                 return true;
@@ -59,7 +67,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
             return false;
         }
 
-        public static string GetScriptFilePath(string path, string? alias, TerminalTool tool)
+        public string GetScriptFilePath(string path, string? alias, TerminalTool tool)
         {
             return tool switch
             {
@@ -69,7 +77,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
             };
         }
 
-        public static bool WriteScriptFile(string path, string? alias, TerminalTool scriptTool, string? command, string? description, TerminalTool? commandTool)
+        public bool WriteScriptFile(string path, string? alias, TerminalTool scriptTool, string? command, string? description, TerminalTool? commandTool)
         {
             string scriptPath = string.Empty;
             try
@@ -77,8 +85,8 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
                 scriptPath = GetScriptFilePath(path, alias, scriptTool);
                 var scriptContent = scriptTool switch
                 {
-                    TerminalTool.PowerShell => TemplateUtility.GetPowerShellCommandScript(alias ?? string.Empty, command ?? string.Empty, description ?? string.Empty, commandTool),
-                    TerminalTool.Cmd => TemplateUtility.GetCmdCommandScript(alias ?? string.Empty, command ?? string.Empty, description ?? string.Empty, commandTool),
+                    TerminalTool.PowerShell => _templateService.GetPowerShellCommandScript(alias ?? string.Empty, command ?? string.Empty, description ?? string.Empty, commandTool),
+                    TerminalTool.Cmd => _templateService.GetCmdCommandScript(alias ?? string.Empty, command ?? string.Empty, description ?? string.Empty, commandTool),
                     _ => throw new ArgumentException($"The tool \"{scriptTool}\" is unknown.", nameof(scriptTool)),
                 };
                 Directory.CreateDirectory(path);
@@ -87,16 +95,16 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
             }
             catch (Exception ex)
             {
-                ServiceContext.GetService<IConsoleService>().WriteLineWithColor($"Could not save script file under \"{scriptPath}\": {ex.Message}", ConsoleColor.Red);
+                _console.WriteLineWithColor($"Could not save script file under \"{scriptPath}\": {ex.Message}", ConsoleColor.Red);
                 return false;
             }
         }
 
-        public static bool DeleteScriptFile(string path, string alias, TerminalTool scriptTool)
+        public bool DeleteScriptFile(string path, string alias, TerminalTool scriptTool)
             => DeleteScriptFile(() => GetScriptFilePath(path, alias, scriptTool));
-        public static bool DeleteScriptFile(string filePath)
+        public bool DeleteScriptFile(string filePath)
             => DeleteScriptFile(() => filePath);
-        private static bool DeleteScriptFile(Func<string> filePathFunc)
+        private bool DeleteScriptFile(Func<string> filePathFunc)
         {
             string filePath = string.Empty;
             try
@@ -108,7 +116,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Utilities
             }
             catch (Exception ex)
             {
-                ServiceContext.GetService<IConsoleService>().WriteLineWithColor($"Could not delete file \"{filePath}\": {ex.Message}", ConsoleColor.Red);
+                _console.WriteLineWithColor($"Could not delete file \"{filePath}\": {ex.Message}", ConsoleColor.Red);
                 return false;
             }
         }

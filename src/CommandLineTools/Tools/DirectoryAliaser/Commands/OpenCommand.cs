@@ -16,6 +16,11 @@ namespace MaSch.CommandLineTools.Tools.DirectoryAliaser.Commands
         [CliCommandValue(1, "subdirectory", Required = false, HelpText = "The sub directory to open.")]
         public override string? SubDirectory { get; set; }
 
+        public OpenCommand(IConsoleService console)
+            : base(console)
+        {
+        }
+
         protected override int OnExecuteCommand(CliExecutionContext context)
         {
             var tmpFile = Path.Combine(Path.GetTempPath(), "cdx-open.tmp");

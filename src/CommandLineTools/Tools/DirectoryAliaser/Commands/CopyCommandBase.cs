@@ -11,6 +11,11 @@ namespace MaSch.CommandLineTools.Tools.DirectoryAliaser.Commands
         public abstract string? Alias { get; set; }
         public abstract string? SubDirectory { get; set; }
 
+        public CopyCommandBase(IConsoleService console)
+            : base(console)
+        {
+        }
+
         protected ExitCode HandleCopy(ExitCode missingAliasCode, ExitCode aliasNotFoundCode, Func<string, ExitCode> action)
         {
             if (string.IsNullOrWhiteSpace(Alias))

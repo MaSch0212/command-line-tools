@@ -17,6 +17,11 @@ namespace MaSch.CommandLineTools.Tools.DirectoryAliaser.Commands
         [CliCommandOption('d', "directory", Required = false, HelpText = "The directory from which the aliases should be removed. By default the current directory is used.")]
         public string? Directory { get; set; }
 
+        public RemoveCommand(IConsoleService console)
+            : base(console)
+        {
+        }
+
         protected override int OnExecuteCommand(CliExecutionContext context)
         {
             PathConfiguration? path = null;

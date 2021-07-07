@@ -13,6 +13,8 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
     [CliCommand("install", HelpText = "Adjusts the Path variable to include aliases.", ParentCommand = typeof(CommandAliaserTool))]
     public class InstallCommand : CommandBase
     {
+        private readonly IConsoleService _console;
+
         public override bool IsScopeExcluse { get; } = false;
 
         [CliCommandOption('g', "global", HelpText = "Install global path.")]
@@ -23,6 +25,11 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
 
         [CliCommandOption('u', "user", HelpText = "Install user path.")]
         public override bool User { get; set; }
+
+        public InstallCommand(IConsoleService console)
+        {
+            _console = console;
+        }
 
         protected override int OnExecuteCommand(CliExecutionContext context)
         {
@@ -42,7 +49,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
             if (changed)
             {
                 Environment.SetEnvironmentVariable("PATH", string.Join(";", paths), EnvironmentVariableTarget.User);
-                Console.WriteLineWithColor("Successfully saved Path environment variable.", ConsoleColor.Green);
+                _console.WriteLineWithColor("Successfully saved Path environment variable.", ConsoleColor.Green);
             }
 
             return (int)ExitCode.Okay;
@@ -55,7 +62,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
                 Directory.CreateDirectory(path);
                 if (paths.Contains(path, StringComparer.OrdinalIgnoreCase))
                 {
-                    Console.WriteLineWithColor($"X {path}", ConsoleColor.Yellow);
+                    _console.WriteLineWithColor($"X {path}", ConsoleColor.Yellow);
                     return;
                 }
 
@@ -75,7 +82,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
                 else
                     paths.Insert(idx, path);
 
-                Console.WriteLine($"+ {path}");
+                _console.WriteLine($"+ {path}");
 
                 changed = true;
             }

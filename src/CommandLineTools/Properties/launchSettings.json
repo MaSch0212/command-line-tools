@@ -2,7 +2,7 @@
   "profiles": {
     "CommandLineTools": {
       "commandName": "Project",
-      "commandLineArgs": "sudo do -f powershell -p 23284 -a -- -noprofile -Command Write-Host 'This is a test'"
+      "commandLineArgs": "alias add blub"
     }
   }
 }

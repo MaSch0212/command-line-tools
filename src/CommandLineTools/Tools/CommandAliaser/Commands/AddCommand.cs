@@ -1,7 +1,7 @@
 ﻿using MaSch.CommandLineTools.Common;
 using MaSch.CommandLineTools.Extensions;
 using MaSch.CommandLineTools.Tools.CommandAliaser.Models;
-using MaSch.CommandLineTools.Tools.CommandAliaser.Utilities;
+using MaSch.CommandLineTools.Tools.CommandAliaser.Services;
 using MaSch.Console;
 using MaSch.Console.Cli.Configuration;
 using MaSch.Console.Cli.Runtime;
@@ -13,6 +13,9 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
     [CliCommand("add", HelpText = "Add new command alias.", ParentCommand = typeof(CommandAliaserTool))]
     public class AddCommand : CommandBase
     {
+        private readonly IConsoleService _console;
+        private readonly ICommandsService _commandsService;
+
         public override bool IsScopeExcluse { get; } = true;
 
         [CliCommandValue(0, "alias", Required = true, HelpText = "The alias to add.")]
@@ -39,17 +42,23 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
         [CliCommandOption('f', "force", HelpText = "Forces the creation of the alias even if it already exists.")]
         public bool Force { get; set; }
 
+        public AddCommand(IConsoleService console, ICommandsService commandsService)
+        {
+            _console = console;
+            _commandsService = commandsService;
+        }
+
         protected override int OnExecuteCommand(CliExecutionContext context)
         {
             if (Description == null)
             {
-                Console.Write("Description: ");
-                Description = Console.ReadLine();
+                _console.Write("Description: ");
+                Description = _console.ReadLine();
             }
 
             if (!Local && !Global && !User)
             {
-                var result = SelectControl.Show(Console, SelectControl.OneSelectionMode.LeftRight, "Command Scope: ", 1, "User", "Local", "Global");
+                var result = SelectControl.Show(_console, SelectControl.OneSelectionMode.LeftRight, "Command Scope: ", 1, "User", "Local", "Global");
                 User = result.Index == 0;
                 Local = result.Index == 1;
                 Global = result.Index == 2;
@@ -57,9 +66,9 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
 
             var path = User ? UserCommandsPath : Local ? LocalCommandsPath : GlobalCommandsPath;
             var scopeName = User ? UserScopeName : Local ? LocalScopeName : GlobalScopeName;
-            var commands = CommandsUtility.LoadCommands(path);
+            var commands = _commandsService.LoadCommands(path);
 
-            if (commands.TryGetCommand(Alias, out var command))
+            if (_commandsService.TryGetCommand(commands, Alias, out var command))
             {
                 if (!Force)
                     throw new ApplicationExitException(ExitCode.AliasAddExists, $"The alias \"{Alias}\" already exists for scope \"{scopeName}\". Use the --force parameter to override the existing alias.");
@@ -68,8 +77,8 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
 
             while (string.IsNullOrWhiteSpace(Command))
             {
-                Console.Write("Command: ");
-                Command = Console.ReadLine();
+                _console.Write("Command: ");
+                Command = _console.ReadLine();
             }
 
             var tool = Tool?.ToTool();
@@ -80,17 +89,17 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
                 CommandText = Command,
             });
 
-            if (!CommandsUtility.SaveCommands(path, commands))
+            if (!_commandsService.SaveCommands(path, commands))
                 return (int)ExitCode.AliasAddFailedModifyJson;
 
             var success = true;
-            success &= CommandsUtility.WriteScriptFile(path, Alias!, TerminalTool.PowerShell, Command, Description, tool);
-            success &= CommandsUtility.WriteScriptFile(path, Alias!, TerminalTool.Cmd, Command, Description, tool);
+            success &= _commandsService.WriteScriptFile(path, Alias!, TerminalTool.PowerShell, Command, Description, tool);
+            success &= _commandsService.WriteScriptFile(path, Alias!, TerminalTool.Cmd, Command, Description, tool);
 
             if (success)
-                Console.WriteLineWithColor($"Successfully added alias \"{Alias}\" to scope \"{scopeName}\".", ConsoleColor.Green);
+                _console.WriteLineWithColor($"Successfully added alias \"{Alias}\" to scope \"{scopeName}\".", ConsoleColor.Green);
             else
-                Console.WriteLineWithColor($"Partially added alias \"{Alias}\" to scope \"{scopeName}\".", ConsoleColor.Yellow);
+                _console.WriteLineWithColor($"Partially added alias \"{Alias}\" to scope \"{scopeName}\".", ConsoleColor.Yellow);
 
             return (int)(success ? ExitCode.Okay : ExitCode.AliasAddFailedCreateScript);
         }

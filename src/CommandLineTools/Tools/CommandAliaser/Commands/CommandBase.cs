@@ -1,4 +1,5 @@
-﻿using MaSch.Console.Cli;
+﻿using MaSch.Console;
+using MaSch.Console.Cli;
 using MaSch.Console.Cli.Runtime;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ namespace MaSch.CommandLineTools.Tools.CommandAliaser.Commands
         protected static readonly string GlobalCommandsPath = Path.Combine(CommandAliaserTool.CommandsPath, "global");
         protected static readonly string LocalCommandsPath = Path.Combine(CommandAliaserTool.CommandsPath, $"local-{Environment.MachineName.ToLower()}");
         protected static readonly string UserCommandsPath = Path.Combine(LocalCommandsPath, Environment.UserName.ToLower());
+
         protected static string CommandsFileName => CommandAliaserTool.CommandsFileName;
 
         public abstract bool IsScopeExcluse { get; }
