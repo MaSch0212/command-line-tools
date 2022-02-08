@@ -5,7 +5,8 @@ try
     if ($args[0] -eq "please") {
         $command = (Get-History | Select-Object -Last 1).CommandLine
         if (-not [String]::IsNullOrEmpty($command)) {
-            Invoke-Expression "& `"$PSScriptRoot\MaSch.CommandLineTools\CommandLineTools.exe`" sudo $rawArgs --command -- $command"
+            $rawArgs = $rawArgs.Substring(6)
+            Invoke-Expression "& `"$PSScriptRoot\MaSch.CommandLineTools\CommandLineTools.exe`" sudo $rawArgs -- $command"
             exit $LASTEXITCODE
         }
     }
